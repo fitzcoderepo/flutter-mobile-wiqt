@@ -4,11 +4,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'parameter_chart_screen.dart';
 import 'dart:io' show Platform;
+import 'base_scaffold.dart';
+import 'package:intl/intl.dart';
 
 class UnitDetailScreen extends StatefulWidget {
   final int unitId;
+  final String title;
 
-  UnitDetailScreen({Key? key, required this.unitId}) : super(key: key);
+  const UnitDetailScreen({Key? key, required this.unitId, required this.title})
+      : super(key: key);
 
   @override
   _UnitDetailScreenState createState() => _UnitDetailScreenState();
@@ -18,7 +22,7 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
   Map<String, dynamic> unitDetails = {};
   Map<String, dynamic> latestReport = {};
   bool isLoading = true;
-  bool _isLocalIphone = false;
+  final bool _isLocalIphone = false;
   String getBaseUrl() {
     if (Platform.isAndroid) {
       return "http://10.0.2.2:8000";
@@ -31,24 +35,31 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     }
   }
 
-  Widget _buildDetailRow(String label, String? value) {
+  Widget _buildDetailRow(
+    String label,
+    String? value,
+    
+  ) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
-          Text(value ?? 'N/A'),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: darkBlue,)),
+          Text(value ?? 'N/A', style: const TextStyle(color: darkBlue)),
         ],
       ),
     );
   }
 
-  Widget _buildSensorTile(String sensorName, String value) {
+  Widget _buildSensorTile(String sensorName, String value, String? date) {
     return Card(
+      color: darkBlue,
+      elevation: 10.0,
+      shadowColor: darkBlue,
+      margin: const EdgeInsets.all(5),
       child: InkWell(
         onTap: () {
-          // TODO: Implement navigation to the chart page for this sensor
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ParameterChartScreen(
@@ -59,13 +70,36 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(2.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text(sensorName, style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text(value),
+              Text(sensorName,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.white,
+                      decorationThickness: .5,
+                      fontSize: 22,
+                      color: Colors.white)),
+              const SizedBox(height: 5), // spacing
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 5), // spacing
+              Text(
+                'Last Reported:\n$date',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 8,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),
@@ -73,43 +107,10 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     );
   }
 
-  List<Widget> _buildSensorTiles(String telemetryType) {
-    List<Widget> tiles = [];
-
-    // Add common tiles for both telemetry types
-    tiles.add(_buildSensorTile('cport2', latestReport['cport2'] ?? 'N/A'));
-    tiles.add(_buildSensorTile('vport2', latestReport['vport2'] ?? 'N/A'));
-    tiles.add(_buildSensorTile('vport1', latestReport['vport1'] ?? 'N/A'));
-
-    // Add additional tiles for 'telemetry_monitoring'
-    if (telemetryType == 'telemetry_monitoring') {
-      tiles.addAll([
-        _buildSensorTile('Temp', latestReport['temp'] ?? 'N/A'),
-        _buildSensorTile('Ph', latestReport['ph'] ?? 'N/A'),
-        _buildSensorTile('Orp', latestReport['orp'] ?? 'N/A'),
-        _buildSensorTile('Spcond', latestReport['spcond'] ?? 'N/A'),
-        _buildSensorTile('Turb', latestReport['turb'] ?? 'N/A'),
-        _buildSensorTile('Chl', latestReport['chl'] ?? 'N/A'),
-        _buildSensorTile('Bg', latestReport['bg'] ?? 'N/A'),
-        _buildSensorTile('Hdo', latestReport['hdo'] ?? 'N/A'),
-        _buildSensorTile('Hdo per', latestReport['hdo_per'] ?? 'N/A'),
-        // ... add other tiles as needed ...
-      ]);
-    }
-
-    return tiles;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUnitDetails();
-  }
-
   Future<void> _fetchUnitDetails() async {
-    final _storage = FlutterSecureStorage();
+    const storage = FlutterSecureStorage();
     final token =
-        await _storage.read(key: 'auth_token'); // Retrieve the stored token
+        await storage.read(key: 'auth_token'); // Retrieve the stored token
     var baseUrl = getBaseUrl();
     final unitDetailResponse = await http.get(
       Uri.parse('$baseUrl/api/v1/unit-detail/${widget.unitId}'),
@@ -127,52 +128,100 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
 
       setState(() {
         unitDetails = json.decode(unitDetailResponse.body);
-        // Assuming the latest report is the first item in the response array
-        latestReport = (unitReportData['results'] is List &&
-                unitReportData['results'].isNotEmpty)
-            ? unitReportData['results'][0]
-            : <String, dynamic>{};
+
+        if (unitReportData['results'] is List && unitReportData['results'].isNotEmpty) 
+        {
+            // Select the last item in the list
+            latestReport = unitReportData['results'].last;
+        } 
+        else 
+        {
+          latestReport = <String, dynamic>{};
+        }
+
         isLoading = false;
       });
-    } else {
+    } 
+    else 
+    {
       // Handle error
     }
+  }
+
+  List<Widget> _buildSensorTiles(String telemetryType) {
+    List<Widget> tiles = [];
+
+    String reportDate = latestReport['report_date'] != null
+        ? DateFormat.yMd().add_jm().format(DateTime.parse(latestReport['report_date']).toLocal()) : 'N/A';
+
+    // Add common tiles for both telemetry types
+    tiles.add(_buildSensorTile('cport2', latestReport['cport2'] ?? 'N/A', reportDate));
+    tiles.add(_buildSensorTile('vport2', latestReport['vport2'] ?? 'N/A', reportDate));
+    tiles.add(_buildSensorTile('vport1', latestReport['vport1'] ?? 'N/A', reportDate));
+
+    // Add additional tiles for 'telemetry_monitoring'
+    if (telemetryType == 'telemetry_monitoring' || telemetryType == 'monitoring_only') {
+      tiles.addAll([
+        _buildSensorTile('Temp', '${latestReport['temp']?.toString() ?? 'N/A'}°C', reportDate),
+        _buildSensorTile('pH', '${latestReport['ph']?.toString() ?? 'N/A'} units', reportDate),
+        _buildSensorTile('Orp', '${latestReport['orp']?.toString() ?? 'N/A'} (mV)', reportDate),
+        _buildSensorTile('Spcond', '${latestReport['spcond']?.toString() ?? 'N/A'} (µS/cm)', reportDate),
+        _buildSensorTile('Turb', '${latestReport['turb']?.toString() ?? 'N/A'} (FNU)', reportDate),
+        _buildSensorTile('Chl', '${latestReport['chl']?.toString() ?? 'N/A'} (µg/L)', reportDate),
+        _buildSensorTile('Bg', '${latestReport['bg']?.toString() ?? 'N/A'} (PPB)', reportDate),
+        _buildSensorTile('Hdo',  '${latestReport['hdo']?.toString() ?? 'N/A'} ', reportDate),
+        _buildSensorTile('Hdo per', '${latestReport['hdo_per']?.toString() ?? 'N/A'} %', reportDate),
+        // ... add other tiles as needed ...
+      ]);
+    }
+
+    return tiles;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnitDetails();
   }
 
   @override
   Widget build(BuildContext context) {
     String telemetryType = unitDetails['type'] ?? '';
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Unit Details'),
-      ),
+    
+    String reportDate = unitDetails['last_reported'] != null
+        ? DateFormat.yMd().add_jm().format(DateTime.parse(unitDetails['last_reported']).toLocal()) : 'N/A';
+
+    return BaseScaffold(
+      title: 'Unit Details',
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // Display unit details here
-                  _buildDetailRow('System', unitDetails['system']),
-                  _buildDetailRow('Head', unitDetails['head']),
-                  _buildDetailRow('Battery Choice',
-                      unitDetails['battery_choice']?.toString()),
-                  _buildDetailRow('Battery Type', unitDetails['battery_type']),
-                  // ... More details ...
-                  _buildDetailRow(
-                      'Last Reported', unitDetails['last_reported']),
-                  _buildDetailRow('Health Index', unitDetails['health_index']),
-                  _buildDetailRow('Latitude', unitDetails['lat']),
-                  _buildDetailRow('Longitude', unitDetails['long']),
-                  // ... Continue for other fields ...
-                  GridView.count(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
-                      children: _buildSensorTiles(telemetryType))
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: <Widget>[
+                    // Display unit details here
+                    _buildDetailRow('System', unitDetails['system']),
+                    _buildDetailRow('Head', unitDetails['head']),
+                    _buildDetailRow('Type', unitDetails['type']),
+                    _buildDetailRow('Battery Choice',unitDetails['battery_choice']?.toString()),
+                    _buildDetailRow('Battery Type', unitDetails['battery_type']),
+                    _buildDetailRow('Latest Report', reportDate,),
+                    _buildDetailRow('Health Index', unitDetails['health_index']),
+                    _buildDetailRow('Latitude', unitDetails['lat']),
+                    _buildDetailRow('Longitude', unitDetails['long']),
+                    // ... Continue for other fields ...
+
+                    GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 4,
+                        mainAxisSpacing: 4,
+                        children: _buildSensorTiles(telemetryType)),
+                  ],
+                ),
               ),
             ),
     );
