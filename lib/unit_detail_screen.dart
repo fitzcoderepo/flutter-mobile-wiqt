@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:convert';
 import 'parameter_chart_screen.dart';
-import 'dart:io' show Platform;
 import 'base_scaffold.dart';
 import 'package:intl/intl.dart';
+import 'services/api_service.dart';
 
 class UnitDetailScreen extends StatefulWidget {
   final int unitId;
   final String title;
 
-  const UnitDetailScreen({Key? key, required this.unitId, required this.title})
-      : super(key: key);
+  const UnitDetailScreen(
+      {super.key, required this.unitId, required this.title});
 
   @override
   _UnitDetailScreenState createState() => _UnitDetailScreenState();
@@ -22,30 +20,45 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
   Map<String, dynamic> unitDetails = {};
   Map<String, dynamic> latestReport = {};
   bool isLoading = true;
-  final bool _isLocalIphone = false;
-  String getBaseUrl() {
-    if (Platform.isAndroid) {
-      return "http://10.0.2.2:8000";
-    } else if (_isLocalIphone) {
-      return "http://192.168.1.139:8000";
-    } else if (Platform.isIOS) {
-      return "http://127.0.0.1:8000";
-    } else {
-      throw UnsupportedError("This platform is not supported");
+
+  final _apiService = UnitApi(storage: const FlutterSecureStorage());
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnitDetails();
+  }
+
+  Future<void> _fetchUnitDetails() async {
+    try {
+      final results =
+          await _apiService.fetchUnitDetails(widget.unitId.toString());
+      setState(() {
+        unitDetails = results['unitDetails'];
+        latestReport = results['latestReport'];
+        isLoading = false;
+      });
+    } catch (e) {
+      // Handle error
+      throw Exception(e);
     }
   }
+
 
   Widget _buildDetailRow(
     String label,
     String? value,
-    
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: darkBlue,)),
+          Text(label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: darkBlue,
+              )),
           Text(value ?? 'N/A', style: const TextStyle(color: darkBlue)),
         ],
       ),
@@ -72,6 +85,7 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
         child: Padding(
           padding: const EdgeInsets.all(2.0),
           child: Column(
+            mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(sensorName,
@@ -107,70 +121,48 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     );
   }
 
-  Future<void> _fetchUnitDetails() async {
-    const storage = FlutterSecureStorage();
-    final token =
-        await storage.read(key: 'auth_token'); // Retrieve the stored token
-    var baseUrl = getBaseUrl();
-    final unitDetailResponse = await http.get(
-      Uri.parse('$baseUrl/api/v1/unit-detail/${widget.unitId}'),
-      headers: {'Authorization': 'Token $token'},
-    );
-
-    final unitReportResponse = await http.get(
-      Uri.parse('$baseUrl/api/v1/unit-reports-uid/${widget.unitId}'),
-      headers: {'Authorization': 'Token $token'},
-    );
-
-    if (unitDetailResponse.statusCode == 200 &&
-        unitReportResponse.statusCode == 200) {
-      final unitReportData = json.decode(unitReportResponse.body);
-
-      setState(() {
-        unitDetails = json.decode(unitDetailResponse.body);
-
-        if (unitReportData['results'] is List && unitReportData['results'].isNotEmpty) 
-        {
-            // Select the last item in the list
-            latestReport = unitReportData['results'].last;
-        } 
-        else 
-        {
-          latestReport = <String, dynamic>{};
-        }
-
-        isLoading = false;
-      });
-    } 
-    else 
-    {
-      // Handle error
-    }
-  }
 
   List<Widget> _buildSensorTiles(String telemetryType) {
     List<Widget> tiles = [];
 
     String reportDate = latestReport['report_date'] != null
-        ? DateFormat.yMd().add_jm().format(DateTime.parse(latestReport['report_date']).toLocal()) : 'N/A';
+        ? DateFormat.yMd()
+            .add_jm()
+            .format(DateTime.parse(latestReport['report_date']).toLocal())
+        : 'N/A';
 
     // Add common tiles for both telemetry types
-    tiles.add(_buildSensorTile('cport2', latestReport['cport2'] ?? 'N/A', reportDate));
-    tiles.add(_buildSensorTile('vport2', latestReport['vport2'] ?? 'N/A', reportDate));
-    tiles.add(_buildSensorTile('vport1', latestReport['vport1'] ?? 'N/A', reportDate));
+    tiles.add(_buildSensorTile(
+        'cport2', latestReport['cport2'] ?? 'N/A', reportDate));
+    tiles.add(_buildSensorTile(
+        'vport2', latestReport['vport2'] ?? 'N/A', reportDate));
+    tiles.add(_buildSensorTile(
+        'vport1', latestReport['vport1'] ?? 'N/A', reportDate));
 
     // Add additional tiles for 'telemetry_monitoring'
-    if (telemetryType == 'telemetry_monitoring' || telemetryType == 'monitoring_only') {
+    if (telemetryType == 'telemetry_monitoring' ||
+        telemetryType == 'monitoring_only') {
       tiles.addAll([
-        _buildSensorTile('Temp', '${latestReport['temp']?.toString() ?? 'N/A'}°C', reportDate),
-        _buildSensorTile('pH', '${latestReport['ph']?.toString() ?? 'N/A'} units', reportDate),
-        _buildSensorTile('Orp', '${latestReport['orp']?.toString() ?? 'N/A'} (mV)', reportDate),
-        _buildSensorTile('Spcond', '${latestReport['spcond']?.toString() ?? 'N/A'} (µS/cm)', reportDate),
-        _buildSensorTile('Turb', '${latestReport['turb']?.toString() ?? 'N/A'} (FNU)', reportDate),
-        _buildSensorTile('Chl', '${latestReport['chl']?.toString() ?? 'N/A'} (µg/L)', reportDate),
-        _buildSensorTile('Bg', '${latestReport['bg']?.toString() ?? 'N/A'} (PPB)', reportDate),
-        _buildSensorTile('Hdo',  '${latestReport['hdo']?.toString() ?? 'N/A'} ', reportDate),
-        _buildSensorTile('Hdo per', '${latestReport['hdo_per']?.toString() ?? 'N/A'} %', reportDate),
+        _buildSensorTile('Temp',
+            '${latestReport['temp']?.toString() ?? 'N/A'}°C', reportDate),
+        _buildSensorTile('pH',
+            '${latestReport['ph']?.toString() ?? 'N/A'} units', reportDate),
+        _buildSensorTile('Orp',
+            '${latestReport['orp']?.toString() ?? 'N/A'} (mV)', reportDate),
+        _buildSensorTile(
+            'Spcond',
+            '${latestReport['spcond']?.toString() ?? 'N/A'} (µS/cm)',
+            reportDate),
+        _buildSensorTile('Turb',
+            '${latestReport['turb']?.toString() ?? 'N/A'} (FNU)', reportDate),
+        _buildSensorTile('Chl',
+            '${latestReport['chl']?.toString() ?? 'N/A'} (µg/L)', reportDate),
+        _buildSensorTile('Bg',
+            '${latestReport['bg']?.toString() ?? 'N/A'} (PPB)', reportDate),
+        _buildSensorTile(
+            'Hdo', '${latestReport['hdo']?.toString() ?? 'N/A'} ', reportDate),
+        _buildSensorTile('Hdo per',
+            '${latestReport['hdo_per']?.toString() ?? 'N/A'} %', reportDate),
         // ... add other tiles as needed ...
       ]);
     }
@@ -179,18 +171,18 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _fetchUnitDetails();
-  }
-
-  @override
   Widget build(BuildContext context) {
     String telemetryType = unitDetails['type'] ?? '';
-    
-    String reportDate = unitDetails['last_reported'] != null
-        ? DateFormat.yMd().add_jm().format(DateTime.parse(unitDetails['last_reported']).toLocal()) : 'N/A';
 
+    String reportDate;
+    if (unitDetails['last_reported'] != null) {
+      reportDate = DateFormat.yMd()
+          .add_jm()
+          .format(DateTime.parse(unitDetails['last_reported']).toLocal());
+    } else {
+      reportDate = 'N/A';
+    }
+   
     return BaseScaffold(
       title: 'Unit Details',
       body: isLoading
@@ -205,18 +197,24 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
                     _buildDetailRow('System', unitDetails['system']),
                     _buildDetailRow('Head', unitDetails['head']),
                     _buildDetailRow('Type', unitDetails['type']),
-                    _buildDetailRow('Battery Choice',unitDetails['battery_choice']?.toString()),
-                    _buildDetailRow('Battery Type', unitDetails['battery_type']),
-                    _buildDetailRow('Latest Report', reportDate,),
-                    _buildDetailRow('Health Index', unitDetails['health_index']),
+                    _buildDetailRow('Battery Choice',
+                        unitDetails['battery_choice']?.toString()),
+                    _buildDetailRow(
+                        'Battery Type', unitDetails['battery_type']),
+                    _buildDetailRow(
+                      'Latest Report',
+                      reportDate,
+                    ),
+                    _buildDetailRow(
+                        'Health Index', unitDetails['health_index']),
                     _buildDetailRow('Latitude', unitDetails['lat']),
                     _buildDetailRow('Longitude', unitDetails['long']),
                     // ... Continue for other fields ...
 
                     GridView.count(
                         shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 3,
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width > 600 ? 4 : 3,
                         crossAxisSpacing: 4,
                         mainAxisSpacing: 4,
                         children: _buildSensorTiles(telemetryType)),

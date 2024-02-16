@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'base_scaffold.dart';
 import 'home_content.dart';
-import 'auth_utils.dart';
+import 'services/auth_utils.dart';
 
 class MyHomePage extends StatefulWidget {
   final String title;
@@ -19,6 +19,9 @@ class _MyHomePageState extends State<MyHomePage> {
   ];
 
   void _onNavItemTapped(int index) {
+    if (index == 0) {
+      const HomeContent();
+    }
     if (index == 1) {
       AuthUtils.logout(context);
     } else {
@@ -47,6 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
 const _navBarItems = [
   BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
   // BottomNavigationBarItem(icon: Icon(Icons.hub), label: 'Project'),
