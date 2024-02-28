@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
-import 'base_scaffold.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'views/home_page.dart';
 
-
+const Color lightBlue = Color(0xFFD3E8F8);
+const Color darkBlue = Color(0xFF17366D);
 // entry point of flutter application
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // ensure plugin services are initialized
+  WidgetsFlutterBinding
+      .ensureInitialized(); // ensure plugin services are initialized
   await initializeDateFormatting(); // initialize date formatting
   runApp(const MyApp());
 }
@@ -23,7 +25,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: darkBlue),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginScreen(), // Login route
+        '/home': (context) => const HomeContent(), // home route
+      }
     );
   }
 }
+
+
+

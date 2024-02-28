@@ -1,8 +1,8 @@
 import 'dart:convert';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:fl_chart/fl_chart.dart';
-import 'urls.dart';
+import 'api_url.dart';
 
 class ProjectApi {
   final FlutterSecureStorage storage;
@@ -43,14 +43,12 @@ class UnitApi {
       Uri.parse('$baseUrl/api/v1/unit-reports-uid/$unitId'),
       headers: {'Authorization': 'Token $token'},
     );
-    
 
     if (unitDetailResponse.statusCode == 200 &&
         unitReportResponse.statusCode == 200) {
       final unitDetails = json.decode(unitDetailResponse.body);
       final unitReportData = json.decode(unitReportResponse.body);
 
-    
       Map<String, dynamic> latestReport = {};
 
       if (unitReportData['results'] is List &&
@@ -74,8 +72,7 @@ class ChartDataApi {
   final FlutterSecureStorage storage;
   final baseUrl = BaseUrl.getBaseUrl();
   ChartDataApi({required this.storage});
-
-  Future<List<FlSpot>> fetchChartData(String unitId, String parameterName) async {
+      Future<List<FlSpot>> fetchChartData(String unitId, String parameterName) async {
     var baseUrl = BaseUrl.getBaseUrl();
     final token = await storage.read(key: 'auth_token');
     final response = await http.get(
@@ -101,5 +98,4 @@ class ChartDataApi {
       throw Exception('Failed to fetch chart data');
     }
   }
-
 }
