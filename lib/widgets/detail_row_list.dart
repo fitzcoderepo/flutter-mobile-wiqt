@@ -51,7 +51,7 @@ class DetailRowsList extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12, // Adjust font size based on screen width
                           decoration: TextDecoration.underline,
-                          decorationThickness: 2),
+                          decorationThickness: 1),
                     ),
                     Text(
                       displayValue.replaceAll('_', ' ').toUpperCase(),
