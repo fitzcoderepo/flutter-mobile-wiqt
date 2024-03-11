@@ -6,6 +6,7 @@ import '../services/api_services.dart';
 import '../widgets/sensor_tiles_list.dart';
 import '../widgets/detail_row_list.dart';
 import '../widgets/drawer.dart';
+import 'dart:convert';
 
 class UnitDetailScreen extends StatefulWidget {
   final int unitId;
@@ -60,7 +61,6 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     } else {
       reportDate = 'N/A';
     }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: darkBlue,
@@ -88,14 +88,15 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Column(children: [
+                  padding: const EdgeInsets.all(6),
+                  child: Column(
+                    children: [
                     const Text('Unit Details',
                         style: TextStyle(
                           fontSize: 30,
                           color: darkBlue,
                         )),
-                    // Display unit details
+                   
                     DetailRowsList(unitDetails: unitDetails),
                     const SizedBox(height: 10),
 

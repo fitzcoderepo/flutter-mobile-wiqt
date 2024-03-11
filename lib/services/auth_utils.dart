@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../login.dart'; // Import the login screen
@@ -19,13 +18,14 @@ class AuthUtils {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final token = data['token']; // Assuming 'token' is the key in the JSON response
+      final token = data['token']; 
       await _storage.write(key: 'auth_token', value: token);
       return true; // Login successful
     } else {
       return false; // Login failed
     }
   }
+
   static Future<void> logout(BuildContext context) async {
     const storage = FlutterSecureStorage();
     await storage.delete(key: 'auth_token');
