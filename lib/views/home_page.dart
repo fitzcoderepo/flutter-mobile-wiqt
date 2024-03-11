@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'unit_detail_screen.dart';
 import '../services/api_services.dart';
+import '../services/auth_utils.dart';
 import '../widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:convert';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
@@ -13,13 +15,13 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
-  // Map<String, dynamic> projectData = {};
   List units = [];
   bool isLoading = true;
   dynamic projectData;
   final _projectApiService = ProjectApi(storage: const FlutterSecureStorage());
   final _unitApiService = UnitApi(storage: const FlutterSecureStorage());
-  Map<int, dynamic> unitDetailsMap = {};
+  Map<String, dynamic> unitDetailsMap = {};
+  Map<String, dynamic> unitReportsMap = {};
   List<LatLng> unitLocations = [];
 
   Future<void> _fetchProjectData() async {
@@ -39,12 +41,14 @@ class _HomeContentState extends State<HomeContent> {
     isLoading = true;
     List<Future> fetchTasks = [];
     for (var unitId in units) {
+      if (unitId == null) continue;
       var task =
           _unitApiService.fetchUnitDetails(unitId.toString()).then((result) {
         Map<String, dynamic> details = result['unitDetails'];
         Map<String, dynamic> latestReport = result['latestReport'];
 
-        unitDetailsMap[unitId] = details;
+        unitDetailsMap[unitId.toString()] = details;
+        unitReportsMap[unitId.toString()] = latestReport;
       }).catchError((e) {
         // Handle error
       });
@@ -87,6 +91,7 @@ class _HomeContentState extends State<HomeContent> {
     unitDetailsMap.forEach((unitId, unitDetails) {
       double? lat = tryParseToDouble(unitDetails['lat']);
       double? long = tryParseToDouble(unitDetails['long']);
+
       if (lat != null && long != null) {
         unitLocations.add(LatLng(lat, long));
       }
@@ -123,26 +128,35 @@ class _HomeContentState extends State<HomeContent> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: 10,
-                  ),
-                  child: Text('${projectData['name'] ?? ''}',
-                      style: const TextStyle(
-                        color: darkBlue,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 3, bottom: 20),
-                  child: Text('${projectData['location'] ?? ''}',
-                      style: const TextStyle(
-                        color: darkBlue,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ),
+                const SizedBox(height: 25),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '${projectData['name'] ?? ''}\n',
+                              style: const TextStyle(
+                                color: darkBlue,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '${projectData['location'] ?? ''}',
+                              style: const TextStyle(
+                                color: darkBlue,
+                                fontSize: 18,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]),
+                const SizedBox(height: 25),
                 Expanded(
                     child: GridView.builder(
                         gridDelegate:
@@ -150,50 +164,73 @@ class _HomeContentState extends State<HomeContent> {
                                 crossAxisCount: 3),
                         itemCount: units.length,
                         itemBuilder: (context, index) {
-                          int unitId = units[index];
+                          final unitId = units[index];
+                          final unitDetails = unitDetailsMap[unitId.toString()];
+                          final unitReports = unitReportsMap[unitId.toString()];
+
+                          final ssid = unitDetails?['ssid'] ?? 'Unknown SSID';
+                        
 
                           return Card(
+                            clipBehavior: Clip.antiAlias,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4)),
-                            color: const Color.fromARGB(220, 255, 255, 255),
-                            elevation: 4,
-                            shadowColor: darkBlue,
-                            margin: const EdgeInsets.all(7),
-                            child: TextButton(
-                              onPressed: () {
+                              borderRadius: BorderRadius.circular(35),
+                            ),
+                            color: const Color.fromARGB(255, 255, 255, 255),
+                            elevation: 8,
+                            shadowColor: Colors.grey.withOpacity(0.5),
+                            child: InkWell(
+                              onTap: () {
                                 Navigator.of(context)
                                     .push(_createRoute(unitId));
                               },
-                              child: Text("Unit ID \n $unitId ",
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  )),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    Text(
+                                      '$ssid',
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: darkBlue),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    
+                                    Text(
+                                      "ID $unitId",
+                                      style: const TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: darkBlue
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
                         })),
-                
               ],
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          collectUnitLocations();
+          onPressed: () {
+            collectUnitLocations();
 
-          if (unitLocations.isNotEmpty) {
-            _openMapModal(context, unitLocations);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('No location data is available.')),
-            );
-          }
-        },
-        backgroundColor: lightBlue,
-        elevation: 15,
-        child: const Icon(Icons.map_outlined, color: darkBlue)
-      ),
-    ); 
+            if (unitLocations.isNotEmpty) {
+              _openMapModal(context, unitLocations);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No location data is available.')),
+              );
+            }
+          },
+          backgroundColor: lightBlue,
+          elevation: 15,
+          child: const Icon(Icons.map_outlined, color: darkBlue)),
+    );
   }
 }
 
