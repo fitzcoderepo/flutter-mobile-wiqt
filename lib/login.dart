@@ -1,7 +1,8 @@
 // ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:wateriqcloud_mobile/views/home_page.dart';
-import 'services/auth_utils.dart';
+import 'services/auth_services/auth_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,8 +20,15 @@ class _LoginScreenState extends State<LoginScreen> {
   String _password = '';
   bool _isLoading = false;
   bool _isPasswordVisible = false;
+  AuthUtils authLogin = AuthUtils();
 
   Future<void> _login() async {
+    var auth = authLogin.isLoggedIn();
+    if (await auth) {
+      print("Yep, logged in");
+    } else {
+      print('Nope, not logged in');
+    }
     print('Login function called');
     if (_formKey.currentState!.validate()) {
       print('Form validated, proceeding with login');
@@ -30,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      AuthUtils authLogin = AuthUtils();
       bool loginSuccess = await authLogin.login(_username, _password);
 
       setState(() {
@@ -39,8 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (loginSuccess) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-              builder: (context) => const HomeContent()),
+          MaterialPageRoute(builder: (context) => const HomeContent()),
         );
       } else {
         showDialog(
@@ -179,5 +185,5 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   Widget _gap() => const SizedBox(height: 16);
-  Widget _logo() => Image.asset('assets/images/wiqt_crop.png');
+  Widget _logo() => SvgPicture.asset('assets/images/CircleLogo.svg');
 }

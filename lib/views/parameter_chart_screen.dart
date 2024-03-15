@@ -1,8 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import '../services/api_services.dart';
+import 'package:wateriqcloud_mobile/services/storage_services/storage_manager.dart';
+import '../services/wiqc_api_services/api_services.dart';
 import 'dart:math';
 
 const Color lightBlue = Color(0xFFD3E8F8);
@@ -43,7 +44,7 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
     return '';
   }
 
-  final _apiService = ChartDataApi(storage: const FlutterSecureStorage());
+  final _apiService = ChartDataApi(storage: SecureStorageManager.storage);
 
   @override
   void initState() {
@@ -94,9 +95,8 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
             color: Colors.white,
             shape: BoxShape.circle,
           ),
-          child: Image.asset(
-            'assets/images/wiqt_crop.png',
-            filterQuality: FilterQuality.none,
+          child: SvgPicture.asset(
+                'assets/images/CircleLogo.svg',
             height: 45,
           ),
         ),

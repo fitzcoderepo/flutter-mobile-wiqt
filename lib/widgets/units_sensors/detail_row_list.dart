@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:flutter/rendering.dart';
 
 class DetailRowsList extends StatelessWidget {
   final Map<String, dynamic> unitDetails;
   final int? unitId;
   // final Map<String, dynamic> latestReport;
 
-  DetailRowsList({
+  const DetailRowsList({
     super.key,
     required this.unitDetails,
     this.unitId,
@@ -29,7 +28,7 @@ class DetailRowsList extends StatelessWidget {
         // If value is a JSON string
         try {
           Map<String, dynamic> gpios =
-              json.decode(value.trim().replaceAll('\'', '\"'));
+              json.decode(value.trim().replaceAll('\'', '"'));
           if (gpios.containsKey('16') && gpios['16'].toString() == '1') {
             active = true;
           }
@@ -69,7 +68,7 @@ class DetailRowsList extends StatelessWidget {
               decorationThickness: 1,
             ),
           ),
-          SizedBox(height: 4), // Add some spacing
+          const SizedBox(height: 4), // Add some spacing
           displayWidget,
         ],
       ),

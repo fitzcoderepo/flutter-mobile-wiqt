@@ -2,6 +2,7 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
+    
 }
 
 def localProperties = new Properties()
@@ -57,8 +58,8 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
 
-        versionCode 12
-        versionName "0.1.1"
+        versionCode 14
+        versionName "0.3.1"
     }
 
     signingConfigs {
@@ -82,5 +83,3 @@ android {
 flutter {
     source '../..'
 }
-
-dependencies {}
