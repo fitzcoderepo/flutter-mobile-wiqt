@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:wateriqcloud_mobile/services/storage_services/storage_manager.dart';
+import '../models/wiqc_notifications.dart';
 import 'unit_detail_screen.dart';
-import '../services/api_services.dart';
-import '../services/auth_utils.dart';
+import '../services/wiqc_api_services/api_services.dart';
 import '../widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'dart:convert';
 
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
   @override
-  _HomeContentState createState() => _HomeContentState();
+  HomeContentState createState() => HomeContentState();
 }
 
-class _HomeContentState extends State<HomeContent> {
+class HomeContentState extends State<HomeContent> {
   List units = [];
   bool isLoading = true;
   dynamic projectData;
-  final _projectApiService = ProjectApi(storage: const FlutterSecureStorage());
-  final _unitApiService = UnitApi(storage: const FlutterSecureStorage());
+  final _projectApiService = ProjectApi(storage: SecureStorageManager.storage);
+  final _unitApiService = UnitApi(storage: SecureStorageManager.storage);
   Map<String, dynamic> unitDetailsMap = {};
   Map<String, dynamic> unitReportsMap = {};
   List<LatLng> unitLocations = [];
@@ -98,6 +99,19 @@ class _HomeContentState extends State<HomeContent> {
     });
   }
 
+  Future<void> saveUnitOrder(List<dynamic> newOrder) async {
+    var box = await Hive.openBox('unitListOrder');
+    await box.put('unitsOrder', newOrder);
+  }
+
+  Future<void> loadUnitOrder() async {
+    var box = await Hive.openBox('unitListOrder');
+    var savedOrder = box.get('unitsOrder');
+    if (savedOrder != null) {
+      units = List<dynamic>.from(savedOrder);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,9 +127,8 @@ class _HomeContentState extends State<HomeContent> {
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: Image.asset(
-                'assets/images/wiqt_crop.png',
-                filterQuality: FilterQuality.none,
+              child: SvgPicture.asset(
+                'assets/images/CircleLogo.svg',
                 height: 45,
               ),
             ),
@@ -158,61 +171,122 @@ class _HomeContentState extends State<HomeContent> {
                     ]),
                 const SizedBox(height: 25),
                 Expanded(
-                    child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3),
-                        itemCount: units.length,
-                        itemBuilder: (context, index) {
-                          final unitId = units[index];
-                          final unitDetails = unitDetailsMap[unitId.toString()];
-                          final unitReports = unitReportsMap[unitId.toString()];
+                  // child: GridView.builder(
+                  //     gridDelegate:
+                  //         const SliverGridDelegateWithFixedCrossAxisCount(
+                  //             crossAxisCount: 1),
+                  //     itemCount: units.length,
+                  //     itemBuilder: (context, index) {
+                  //       final unitId = units[index];
+                  //       final unitDetails = unitDetailsMap[unitId.toString()];
+                  // final unitReports = unitReportsMap[unitId.toString()];
 
-                          final ssid = unitDetails?['ssid'] ?? 'Unknown SSID';
-                        
+                  // final ssid = unitDetails?['ssid'] ?? 'Unknown SSID';
+                  child: ReorderableListView.builder(
+                      itemCount: units.length,
+                      itemBuilder: (context, index) {
+                        final unitId = units[index];
+                        final unitDetails = unitDetailsMap[unitId.toString()];
+                        final ssid = unitDetails?['ssid'] ?? 'Unknown SSID';
+                        return Card(
+                          // Key used for each unit for reorderableListView
+                          key: ValueKey(unitId),
+                          elevation: 8,
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 10.0, vertical: 7.0),
 
-                          return Card(
-                            clipBehavior: Clip.antiAlias,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(35),
+                          child: ListTile(
+                            // shape: RoundedRectangleBorder(
+                            //   borderRadius: BorderRadius.circular(10),
+                            // ),
+                            enableFeedback: true,
+                            leading: Container(
+                              padding: const EdgeInsets.only(right: 20.0),
+                              decoration: const BoxDecoration(
+                                  border: Border(
+                                      right: BorderSide(
+                                          width: 1.0, color: darkBlue))),
+                              child: const Icon(Icons.drag_indicator_rounded,
+                                  size: 30,
+                                  color: Color.fromARGB(255, 169, 177, 183)),
                             ),
-                            color: const Color.fromARGB(255, 255, 255, 255),
-                            elevation: 8,
-                            shadowColor: Colors.grey.withOpacity(0.5),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context)
-                                    .push(_createRoute(unitId));
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[
-                                    Text(
-                                      '$ssid',
-                                      style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: darkBlue),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    
-                                    Text(
-                                      "ID $unitId",
-                                      style: const TextStyle(
-                                        fontSize: 8,
+                            title: Text(ssid,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color.fromARGB(255, 5, 113, 196))),
+                            subtitle: Row(
+                              children: <Widget>[
+                                Text("ID ${unitId.toString()}",
+                                    style: const TextStyle(
+                                        color: darkBlue,
                                         fontWeight: FontWeight.bold,
-                                        color: darkBlue
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                        fontSize: 10))
+                              ],
                             ),
-                          );
-                        })),
+                            trailing: const Icon(Icons.keyboard_arrow_right,
+                                color: darkBlue, size: 40.0),
+                            onTap: () {
+                              Navigator.of(context).push(_createRoute(unitId));
+                            },
+                            tileColor: const Color.fromARGB(255, 233, 234, 235),
+                          ),
+                          // trailing: Text(notification.payload.toString()),
+                        );
+
+                        // Card(
+                        //   clipBehavior: Clip.antiAlias,
+                        //   shape: RoundedRectangleBorder(
+                        //     borderRadius: BorderRadius.circular(35),
+                        //   ),
+                        //   color: const Color.fromARGB(255, 255, 255, 255),
+                        //   elevation: 8,
+                        //   shadowColor: Colors.grey.withOpacity(0.5),
+                        //   child: InkWell(
+                        //     onTap: () {
+                        //       Navigator.of(context)
+                        //           .push(_createRoute(unitId));
+                        //     },
+                        //     child: Padding(
+                        //       padding: const EdgeInsets.all(8.0),
+                        //       child: Column(
+                        //         mainAxisAlignment: MainAxisAlignment.center,
+                        //         crossAxisAlignment: CrossAxisAlignment.center,
+                        //         children: <Widget>[
+                        //           Text(
+                        //             '$ssid',
+                        //             style: const TextStyle(
+                        //                 fontSize: 14,
+                        //                 fontWeight: FontWeight.bold,
+                        //                 color: darkBlue),
+                        //             textAlign: TextAlign.center,
+                        //           ),
+                        //           Text(
+                        //             "ID $unitId",
+                        //             style: const TextStyle(
+                        //                 fontSize: 8,
+                        //                 fontWeight: FontWeight.bold,
+                        //                 color: darkBlue),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //     ),
+                        //   ),
+                        // );
+                      },
+                      onReorder: (int oldIndex, int newIndex) {
+                        if (oldIndex < newIndex) {
+                          newIndex -= 1;
+                        }
+                        final unitId = units.removeAt(oldIndex);
+                        units.insert(newIndex, unitId);
+                        try {
+                          print('Attempting to save unit order');
+                          saveUnitOrder(units);
+                        } catch (e) {
+                          print('Failed to save unit order $e');
+                        }
+                      }),
+                )
               ],
             ),
       floatingActionButton: FloatingActionButton(
