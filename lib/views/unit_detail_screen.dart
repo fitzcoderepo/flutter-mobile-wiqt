@@ -1,10 +1,11 @@
+import 'package:flutter_svg/svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
-import '../services/api_services.dart';
-import '../widgets/sensor_tiles_list.dart';
-import '../widgets/detail_row_list.dart';
+import 'package:wateriqcloud_mobile/services/storage_services/storage_manager.dart';
+import '../services/wiqc_api_services/api_services.dart';
+import '../widgets/units_sensors/sensor_tiles_list.dart';
+import '../widgets/units_sensors/detail_row_list.dart';
 import '../widgets/drawer.dart';
 
 class UnitDetailScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
   String reportDate = '';
   bool isLoading = true;
 
-  final _apiService = UnitApi(storage: const FlutterSecureStorage());
+  final _apiService = UnitApi(storage: SecureStorageManager.storage);
 
   @override
   void initState() {
@@ -60,7 +61,6 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     } else {
       reportDate = 'N/A';
     }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: darkBlue,
@@ -74,9 +74,8 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: Image.asset(
-                'assets/images/wiqt_crop.png',
-                filterQuality: FilterQuality.none,
+              child: SvgPicture.asset(
+                'assets/images/CircleLogo.svg',
                 height: 45,
               ),
             ),
@@ -88,14 +87,15 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Column(children: [
+                  padding: const EdgeInsets.all(6),
+                  child: Column(
+                    children: [
                     const Text('Unit Details',
                         style: TextStyle(
                           fontSize: 30,
                           color: darkBlue,
                         )),
-                    // Display unit details
+                   
                     DetailRowsList(unitDetails: unitDetails),
                     const SizedBox(height: 10),
 

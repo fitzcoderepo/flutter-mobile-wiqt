@@ -11,6 +11,13 @@ import 'package:wateriqcloud_mobile/services/firebase/firebase_api.dart';
 import 'login.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'views/home_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'services/firebase_api_services/firebase_api.dart';
+import 'widgets/app_init_widget.dart';
+import 'views/notification_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/wiqc_notifications.dart';
 
 const Color lightBlue = Color(0xFFD3E8F8);
 const Color darkBlue = Color(0xFF17366D);
@@ -77,6 +84,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-

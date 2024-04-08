@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:wateriqcloud_mobile/services/auth_service.dart';
 import '../models/wiqc_notifications.dart';
+import '../services/auth_services/auth_utils.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../views/notification_screen.dart';
@@ -45,12 +45,12 @@ class _MyDrawerState extends State<MyDrawer> {
                 future: hasUnreadNotifications(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox(); // Return an empty widget or a loader based on your preference
+                    return SizedBox(); // Return an empty widget or a loader based on your preference
                   } else if (snapshot.hasData && snapshot.data == true) {
                     // If there are unread notifications, show an indicator
-                    return const Icon(Icons.circle, color: Colors.red, size: 12.0);
+                    return Icon(Icons.circle, color: Colors.red, size: 12.0);
                   } else {
-                    return const SizedBox(); // No unread notifications
+                    return SizedBox(); // No unread notifications
                   }
                 },
               ),
