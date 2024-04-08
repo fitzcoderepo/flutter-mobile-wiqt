@@ -41,6 +41,12 @@ dependencies:
   cupertino_icons: ^1.0.2
   google_maps_flutter: ^2.5.3
   syncfusion_flutter_charts: ^24.2.7+1
+  flutter_svg: ^2.0.10+1
+  hive: ^2.2.3
+  firebase_core: ^2.28.0
+  firebase_messaging: ^14.8.0
+  flutter_local_notifications: ^17.0.0
+  hive_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:

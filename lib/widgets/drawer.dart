@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import '../services/auth_utils.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:wateriqcloud_mobile/services/auth_service.dart';
+import '../models/wiqc_notifications.dart';
+import 'package:flutter_svg/svg.dart';
+
+import '../views/notification_screen.dart';
 
 const Color lightBlue = Color(0xFFD3E8F8);
 const Color darkBlue = Color(0xFF17366D);
@@ -12,6 +17,10 @@ class MyDrawer extends StatefulWidget {
   @override
   _MyDrawerState createState() => _MyDrawerState();
 }
+Future<bool> hasUnreadNotifications() async {
+    final box = Hive.box<WiqcNotification>('notifications');
+    return box.values.any((notification) => !notification.isRead);
+  }
 
 class _MyDrawerState extends State<MyDrawer> {
   @override
@@ -20,30 +29,43 @@ class _MyDrawerState extends State<MyDrawer> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: darkBlue,
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Colors.white,
             ),
-            child: Text(
-              'WaterIQ Technologies',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-              ),
+            child: SvgPicture.asset(
+              'assets/images/WIQTLogoFullColor.svg',
+              height: 45,
             ),
           ),
+          ListTile(
+              leading: const Icon(Icons.notification_important),
+              title: const Text('Notifications'),
+              trailing: FutureBuilder<bool>(
+                future: hasUnreadNotifications(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(); // Return an empty widget or a loader based on your preference
+                  } else if (snapshot.hasData && snapshot.data == true) {
+                    // If there are unread notifications, show an indicator
+                    return const Icon(Icons.circle, color: Colors.red, size: 12.0);
+                  } else {
+                    return const SizedBox(); // No unread notifications
+                  }
+                },
+              ),
+              onTap: () {
+                Navigator.of(context).pushNamed(NotificationScreen.route);
+              }),
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
             onTap: () {
-              AuthUtils.logout(context);
+              AuthenticationService.logout(context);
             },
           ),
-        
         ],
       ),
-      
     );
-    
   }
 }

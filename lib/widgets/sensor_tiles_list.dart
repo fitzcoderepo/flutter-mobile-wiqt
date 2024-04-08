@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
 import 'sensor_tile.dart';
 
 class SensorTilesList extends StatelessWidget {
@@ -75,7 +76,6 @@ class SensorTilesList extends StatelessWidget {
     }
     return sensorData;
   }
-
   @override
   Widget build(BuildContext context) {
     
