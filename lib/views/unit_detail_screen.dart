@@ -2,7 +2,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:wateriqcloud_mobile/services/storage_services/storage_manager.dart';
+import 'package:wateriqcloud_mobile/services/storage/storage_manager.dart';
 import '../services/wiqc_api_services/api_services.dart';
 import '../widgets/units_sensors/sensor_tiles_list.dart';
 import '../widgets/units_sensors/detail_row_list.dart';

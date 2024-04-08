@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:wateriqcloud_mobile/services/auth_service.dart';
 import '../models/wiqc_notifications.dart';
 import '../services/auth_services/auth_utils.dart';
 import 'package:flutter_svg/svg.dart';

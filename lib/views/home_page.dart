@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
-import 'package:wateriqcloud_mobile/services/api_services.dart';
 import 'package:wateriqcloud_mobile/services/storage/storage_manager.dart';
+import 'package:wateriqcloud_mobile/services/wiqc_api_services/api_services.dart';
 import 'unit_detail_screen.dart';
 import '../widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -25,16 +25,10 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic> unitDetailsMap = {};
   Map<String, dynamic> unitReportsMap = {};
   List<LatLng> unitLocations = [];
-  dynamic projectData;
-  final _projectApiService = ProjectApi(storage: SecureStorageManager.storage);
-  final _unitApiService = UnitApi(storage: SecureStorageManager.storage);
-  Map<String, dynamic> unitDetailsMap = {};
-  Map<String, dynamic> unitReportsMap = {};
-  List<LatLng> unitLocations = [];
+  
 
   Future<void> _fetchProjectData() async {
     try {
-      var data = await _projectApiService.fetchProjectData();
       var data = await _projectApiService.fetchProjectData();
       setState(() {
         projectData = data;
@@ -70,29 +64,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _fetchAllUnitDetails() async {
-    isLoading = true;
-    List<Future> fetchTasks = [];
-    for (var unitId in units) {
-      if (unitId == null) continue;
-      var task =
-          _unitApiService.fetchUnitDetails(unitId.toString()).then((result) {
-        Map<String, dynamic> details = result['unitDetails'];
-        Map<String, dynamic> latestReport = result['latestReport'];
-
-        unitDetailsMap[unitId.toString()] = details;
-        unitReportsMap[unitId.toString()] = latestReport;
-      }).catchError((e) {
-        // Handle error
-      });
-
-      fetchTasks.add(task);
-    }
-    await Future.wait(fetchTasks);
-    setState(() {
-      isLoading = false;
-    });
-  }
 
   @override
   void initState() {
@@ -102,34 +73,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  double? tryParseToDouble(dynamic value) {
-    if (value == null) {
-      return null;
-    } // Return null immediately if value is null
-    if (value is double) {
-      return value; // If it's already a double, return it directly
-    }
-    if (value is int) {
-      return value.toDouble(); // Convert int to double
-    }
-    if (value is String) {
-      return double.tryParse(value); // Try parsing string to double
-    }
-    return null; // Return null for any other type that can't be handled
-  }
-
-  void collectUnitLocations() {
-    unitLocations.clear();
-
-    unitDetailsMap.forEach((unitId, unitDetails) {
-      double? lat = tryParseToDouble(unitDetails['lat']);
-      double? long = tryParseToDouble(unitDetails['long']);
-
-      if (lat != null && long != null) {
-        unitLocations.add(LatLng(lat, long));
-      }
-    });
-  }
 
   Future<void> saveUnitOrder(List<dynamic> newOrder) async {
     var box = await Hive.openBox('unitListOrder');
@@ -174,19 +117,6 @@ class _HomePageState extends State<HomePage> {
         unitLocations.add(LatLng(lat, long));
       }
     });
-  }
-
-  Future<void> saveUnitOrder(List<dynamic> newOrder) async {
-    var box = await Hive.openBox('unitListOrder');
-    await box.put('unitsOrder', newOrder);
-  }
-
-  Future<void> loadUnitOrder() async {
-    var box = await Hive.openBox('unitListOrder');
-    var savedOrder = box.get('unitsOrder');
-    if (savedOrder != null) {
-      units = List<dynamic>.from(savedOrder);
-    }
   }
 
   @override
@@ -344,27 +274,4 @@ void _openMapModal(BuildContext context, List<LatLng> unitLocations) {
       });
 }
 
-void _openMapModal(BuildContext context, List<LatLng> unitLocations) {
-  showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Scaffold(
-          // height: MediaQuery.of(context).size.height *
-          // 0.75, // Adjust the size as needed
-          body: GoogleMap(
-            mapType: MapType.normal,
-            initialCameraPosition: CameraPosition(
-              target: unitLocations
-                  .first, // Initial position to the first unit location
-              zoom: 2.0,
-            ),
-            markers: Set.from(unitLocations.map((location) => Marker(
-                  // Generate a unique markerId for each location
-                  markerId: MarkerId(location.toString()),
-                  position: location,
-                ))),
-            myLocationEnabled: true,
-          ),
-        );
-      });
-}
+

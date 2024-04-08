@@ -13,7 +13,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'views/home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'services/firebase_api_services/firebase_api.dart';
 import 'widgets/app_init_widget.dart';
 import 'views/notification_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
