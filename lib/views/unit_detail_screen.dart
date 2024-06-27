@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_svg/svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:wateriqcloud_mobile/services/storage/storage_manager.dart';
 import '../services/wiqc_api_services/api_services.dart';
 import '../widgets/units_sensors/sensor_tiles_list.dart';
-import '../widgets/units_sensors/detail_row_list.dart';
 import '../widgets/drawer.dart';
 
 class UnitDetailScreen extends StatefulWidget {
@@ -24,8 +25,7 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
   Map<String, dynamic> latestReport = {};
   String reportDate = '';
   bool isLoading = true;
-
-  final _apiService = UnitApi(storage: SecureStorageManager.storage);
+  final _unitApiService = UnitApi(storage: SecureStorageManager.storage);
 
   @override
   void initState() {
@@ -36,20 +36,37 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
   Future<void> _fetchUnitDetails() async {
     try {
       final results =
-          await _apiService.fetchUnitDetails(widget.unitId.toString());
+          await _unitApiService.fetchUnitDetails(widget.unitId.toString());
       setState(() {
-        unitDetails = results['unitDetails'];
-        latestReport = results['latestReport'];
+        unitDetails = results['unitDetails'] ?? {};
+        latestReport = results['latestReport'] ?? {};
+        reportDate = unitDetails['last_reported'];
         isLoading = false;
       });
     } catch (e) {
-      // Handle error
-      throw Exception(e);
+      setState(() {
+        isLoading = false;
+      });
+      print("Error fetching unit details: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic crossAxisCount based on screen width
+    int crossAxisCount = MediaQuery.of(context).size.width > 800
+        ? 4
+        : MediaQuery.of(context).size.width > 600
+            ? 3
+            : 2;
+
+    // Adjust childAspectRatio based on device orientation and size
+    double aspectRatio =
+        MediaQuery.of(context).orientation == Orientation.landscape
+            ? 3 / 1
+            : 3 / 1;
+    String ssid = unitDetails['ssid'] ?? 'Unit Details';
+    dynamic lastReported = unitDetails['last_reported'] ?? '';
     String telemetryType = unitDetails['type'] ?? '';
     double? lat = double.tryParse(unitDetails['lat']?.toString() ?? '');
     double? long = double.tryParse(unitDetails['long']?.toString() ?? '');
@@ -61,6 +78,7 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     } else {
       reportDate = 'N/A';
     }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: darkBlue,
@@ -83,31 +101,48 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
         ),
         centerTitle: true, // Centers the column (title and image) in the AppBar
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Column(
-                    children: [
-                    const Text('Unit Details',
-                        style: TextStyle(
-                          fontSize: 30,
-                          color: darkBlue,
-                        )),
-                   
-                    DetailRowsList(unitDetails: unitDetails),
-                    const SizedBox(height: 10),
+      body: RefreshIndicator(
+        onRefresh: _fetchUnitDetails,
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Column(children: [
+                      Text(ssid,
+                          style: const TextStyle(
+                            fontSize: 30,
+                            color: darkBlue,
+                          )),
 
-                    // Display sensor data tiles
-                    SensorTilesList(
-                      unitId: widget.unitId,
-                      reportDate: reportDate,
-                      latestReport: latestReport,
-                      telemetryType: telemetryType,
-                    )
-                  ])),
-            ),
+                      Card(
+                        child: GridView.count(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: aspectRatio,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 0,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: selectedKeys
+                              .where((key) => unitDetails.containsKey(key))
+                              .map((key) =>
+                                  _buildRow(context, key, unitDetails[key]))
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Display sensor data tiles
+                      SensorTilesList(
+                        unitId: widget.unitId,
+                        reportDate: reportDate,
+                        latestReport: latestReport,
+                        telemetryType: telemetryType,
+                      )
+                    ])),
+              ),
+      ),
       floatingActionButton: FloatingActionButton(
           onPressed: () {
             if (lat != null && long != null) {
@@ -136,13 +171,11 @@ void _openMapModal(BuildContext context, lat, long) {
       context: context,
       builder: (BuildContext context) {
         return Scaffold(
-          // height: MediaQuery.of(context).size.height *
-          // 0.75, // Adjust the size as needed
           body: GoogleMap(
-            mapType: MapType.normal,
+            mapType: MapType.hybrid,
             initialCameraPosition: CameraPosition(
               target: LatLng(lat, long),
-              zoom: 0.0,
+              zoom: 6.0,
             ),
             myLocationEnabled: true,
             markers: {
@@ -154,4 +187,80 @@ void _openMapModal(BuildContext context, lat, long) {
           ),
         );
       });
+}
+
+Widget _buildRow(BuildContext context, String key, dynamic value) {
+  Widget displayWidget = Text('N/A',
+      style: TextStyle(
+          fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
+          fontWeight: FontWeight.bold,
+          color: Colors.blue));
+
+  // Handle as text for all keys values
+  String displayValue = value?.toString() ?? 'N/A';
+  displayWidget = Text(displayValue.toUpperCase(),
+      style: TextStyle(
+          fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
+          fontWeight: FontWeight.bold,
+          color: Colors.blue));
+
+  if (key == 'last_reported') {
+    if (value != null) {
+      try {
+        DateTime dateTime = DateTime.parse(value);
+        String formattedDate =
+            DateFormat.yMd().add_jm().format(dateTime.toLocal());
+        displayWidget = Text(
+          formattedDate,
+          style: TextStyle(
+            fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        );
+      } catch (e) {
+        print('Error formatting last_reported: $e');
+      }
+    }
+  }
+
+  return Container(
+    padding: const EdgeInsets.all(4),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          key.replaceAll('_', ' ').toUpperCase(),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
+            decoration: TextDecoration.underline,
+            decorationThickness: 1,
+          ),
+        ),
+        const SizedBox(height: 4), // Add some spacing
+        displayWidget,
+      ],
+    ),
+  );
+}
+
+const selectedKeys = [
+  'last_reported',
+  'system',
+  'head',
+  'type',
+  'battery_choice',
+  'battery_type',
+  'health_index',
+  'signal_strength',
+];
+
+bool _isJsonString(String str) {
+  try {
+    json.decode(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
 }

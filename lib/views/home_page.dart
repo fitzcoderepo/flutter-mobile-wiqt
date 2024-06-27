@@ -7,7 +7,6 @@ import 'package:wateriqcloud_mobile/services/wiqc_api_services/api_services.dart
 import 'unit_detail_screen.dart';
 import '../widgets/drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,42 +16,65 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List units = [];
+  List<dynamic> units = [];
   bool isLoading = true;
   dynamic projectData;
   final _projectApiService = ProjectApi(storage: SecureStorageManager.storage);
   final _unitApiService = UnitApi(storage: SecureStorageManager.storage);
-  Map<String, dynamic> unitDetailsMap = {};
-  Map<String, dynamic> unitReportsMap = {};
   List<LatLng> unitLocations = [];
-  
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProjectData().then((_) {
+      _fetchAllUnitDetails();
+      collectUnitLocations();
+    });
+  }
 
   Future<void> _fetchProjectData() async {
     try {
-      var data = await _projectApiService.fetchProjectData();
+      Map<String, dynamic> data = await _projectApiService.fetchProjectData();
       setState(() {
         projectData = data;
-        units = projectData['units'] as List;
+        units = projectData['units'];
         isLoading = false;
       });
+      _fetchAllUnitDetails(); // fetch unit details after project data is loaded
     } catch (e) {
-      throw Exception(e);
+      setState(() {
+        isLoading = false;
+      });
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Failed to load project data. Please try again later.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+      // throw Exception(e);
     }
   }
 
   Future<void> _fetchAllUnitDetails() async {
+    setState(() {
+      isLoading = true;
+    });
     isLoading = true;
     List<Future> fetchTasks = [];
-    for (var unitId in units) {
+    for (var unit in units) {
+      var unitId = unit['id'];
       if (unitId == null) continue;
-      var task =
-          _unitApiService.fetchUnitDetails(unitId.toString()).then((result) {
-        Map<String, dynamic> details = result['unitDetails'];
-        Map<String, dynamic> latestReport = result['latestReport'];
-
-        unitDetailsMap[unitId.toString()] = details;
-        unitReportsMap[unitId.toString()] = latestReport;
-      }).catchError((e) {
+      var task = _unitApiService
+          .fetchUnitDetails(unitId.toString())
+          .then((result) {})
+          .catchError((e) {
         // Handle error
       });
 
@@ -64,30 +86,9 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchProjectData().then((_) {
-      _fetchAllUnitDetails();
-    });
-  }
-
-
-  Future<void> saveUnitOrder(List<dynamic> newOrder) async {
-    var box = await Hive.openBox('unitListOrder');
-    await box.put('unitsOrder', newOrder);
-  }
-
-  Future<void> loadUnitOrder() async {
-    var box = await Hive.openBox('unitListOrder');
-    var savedOrder = box.get('unitsOrder');
-    if (savedOrder != null) {
-      units = List<dynamic>.from(savedOrder);
-    }
-    _fetchProjectData().then((_) {
-      _fetchAllUnitDetails();
-    });
+  Future<void> _refreshData() async {
+    await _fetchProjectData();
+    await _fetchAllUnitDetails();
   }
 
   double? tryParseToDouble(dynamic value) {
@@ -109,18 +110,38 @@ class _HomePageState extends State<HomePage> {
   void collectUnitLocations() {
     unitLocations.clear();
 
-    unitDetailsMap.forEach((unitId, unitDetails) {
-      double? lat = tryParseToDouble(unitDetails['lat']);
-      double? long = tryParseToDouble(unitDetails['long']);
-
+    for (dynamic value in units) {
+      double? lat = tryParseToDouble(value['lat']);
+      double? long = tryParseToDouble(value['long']);
       if (lat != null && long != null) {
         unitLocations.add(LatLng(lat, long));
       }
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // keep loading indicator up while still gathering data
+    if (isLoading) {
+      return Scaffold(
+          appBar: AppBar(
+            title: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                decoration: const BoxDecoration(
+                    color: AppPallete.whiteColor, shape: BoxShape.circle),
+                child: SvgPicture.asset(
+                  'assets/images/CircleLogo.svg',
+                  height: 45,
+                ),
+              ),
+            ]),
+            centerTitle: true,
+          ),
+          body: const Center(
+            child: CircularProgressIndicator(),
+          ));
+    }
+    // when all data has been fetched, show home page
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppPallete.darkBlue,
@@ -130,7 +151,7 @@ class _HomePageState extends State<HomePage> {
                 color: AppPallete.whiteColor, shape: BoxShape.circle),
             child: SvgPicture.asset(
               'assets/images/CircleLogo.svg',
-              height: 35,
+              height: 45,
             ),
           ),
         ]),
@@ -139,80 +160,83 @@ class _HomePageState extends State<HomePage> {
       drawer: const MyDrawer(),
       body: Column(
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(
+          const Padding(
+            padding: EdgeInsets.only(
               top: 10,
             ),
-            child: Text('${projectData['name'] ?? ''}',
-                style: const TextStyle(
+            child: Text('My Dashboard',
+                style: TextStyle(
                   color: darkBlue,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 )),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 3, bottom: 20),
-            child: Text('${projectData['location'] ?? ''}',
-                style: const TextStyle(
-                  color: darkBlue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                )),
+          const Padding(
+            padding: EdgeInsets.only(top: 3, bottom: 20),
           ),
           Expanded(
-              child: ListView.builder(
-                  itemCount: units.length,
-                  itemBuilder: (context, index) {
-                    int unitId = units[index];
-                    final unitDetails = unitDetailsMap[unitId.toString()];
-                    final latestReport = unitReportsMap[unitId.toString()];
-                    final ssid = unitDetails['ssid'] ?? 'Unknown ssid';
-
-                    return Card(
-                        elevation: 4,
-                        margin: const EdgeInsets.all(7),
-                        child: ListTile(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          enableFeedback: true,
-                          leading: Container(
-                            padding: const EdgeInsets.only(right: 20.0),
-                            decoration: const BoxDecoration(
-                                border: Border(
-                                    right: BorderSide(
-                                        width: 1.0,
-                                        color: AppPallete.darkBlue))),
-                            child: const Icon(Icons.drag_indicator_rounded,
-                                size: 30,
-                                color: Color.fromARGB(255, 169, 177, 183)),
-                          ),
-                          title: Text(ssid,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 5, 113, 196))),
-                          subtitle: Row(
-                            children: <Widget>[
-                              Text("ID $unitId",
+              child: RefreshIndicator(
+                  onRefresh: _refreshData,
+                  child: ListView.builder(
+                      itemCount: units.length,
+                      itemBuilder: (context, index) {
+                        var unit = units[index];
+                        var serverId = unit['id'].toString();
+                        var unitId = unit['unit_id'].toString();
+                        return Card(
+                            elevation: 4,
+                            shadowColor: darkBlue,
+                            margin: const EdgeInsets.all(7),
+                            child: ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              enableFeedback: true,
+                              leading: Container(
+                                padding: const EdgeInsets.only(right: 20.0),
+                                decoration: const BoxDecoration(
+                                    border: Border(
+                                        right: BorderSide(
+                                            width: 1.0,
+                                            color: AppPallete.darkBlue))),
+                                child: const Icon(Icons.drag_indicator_rounded,
+                                    size: 30,
+                                    color: Color.fromARGB(255, 169, 177, 183)),
+                              ),
+                              title: Text(unitId,
                                   style: const TextStyle(
-                                      color: AppPallete.darkBlue,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 10))
-                            ],
-                          ),
-                          trailing: const Icon(Icons.keyboard_arrow_right,
-                              color: AppPallete.darkBlue, size: 40.0),
-                          tileColor: const Color.fromARGB(255, 233, 234, 235),
-                          onTap: () {
-                            Navigator.of(context).push(_createRoute(unitId));
-                          },
-                        ));
-                  }))
+                                      color: Color.fromARGB(255, 5, 113, 196))),
+                              subtitle: Row(
+                                children: <Widget>[
+                                  Text(serverId,
+                                      style: const TextStyle(
+                                          color: AppPallete.darkBlue,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10))
+                                ],
+                              ),
+                              trailing: const Icon(Icons.keyboard_arrow_right,
+                                  color: Color.fromARGB(255, 5, 113, 196),
+                                  size: 40.0),
+                              tileColor:
+                                  const Color.fromARGB(255, 236, 236, 236),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => UnitDetailScreen(
+                                      unitId: int.parse(unit['id'].toString()),
+                                      title: '',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ));
+                      })))
         ],
       ),
       floatingActionButton: FloatingActionButton(
           onPressed: () {
-            collectUnitLocations();
             if (unitLocations.isNotEmpty) {
               _openMapModal(context, unitLocations);
             } else {
@@ -228,27 +252,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Route _createRoute(unitId) {
-  return PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => UnitDetailScreen(
-      unitId: unitId,
-      title: 'Unit details',
-    ),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(0.0, 1.0);
-      const end = Offset.zero;
-      const curve = Curves.ease;
-
-      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-      return SlideTransition(
-        position: animation.drive(tween),
-        child: child,
-      );
-    },
-  );
-}
-
 void _openMapModal(BuildContext context, List<LatLng> unitLocations) {
   showModalBottomSheet(
       context: context,
@@ -257,12 +260,11 @@ void _openMapModal(BuildContext context, List<LatLng> unitLocations) {
           // height: MediaQuery.of(context).size.height *
           // 0.75, // Adjust the size as needed
           body: GoogleMap(
-            mapType: MapType.normal,
+            mapType: MapType.hybrid,
             initialCameraPosition: CameraPosition(
-              target: unitLocations
-                  .first, // Initial position to the first unit location
-              zoom: 2.0,
-            ),
+                target: unitLocations
+                    .first, // Initial position to the first unit location
+                zoom: 2.0),
             markers: Set.from(unitLocations.map((location) => Marker(
                   // Generate a unique markerId for each location
                   markerId: MarkerId(location.toString()),
@@ -273,5 +275,3 @@ void _openMapModal(BuildContext context, List<LatLng> unitLocations) {
         );
       });
 }
-
-

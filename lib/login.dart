@@ -1,10 +1,12 @@
 // ignore_for_file: avoid_print
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
-import 'package:wateriqcloud_mobile/services/auth_service.dart';
+import 'package:wateriqcloud_mobile/services/auth_services/auth_service.dart';
 import 'package:wateriqcloud_mobile/views/home_page.dart';
-import 'services/auth_services/auth_utils.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,25 +23,37 @@ class _LoginScreenState extends State<LoginScreen> {
   String _username = '';
   String _password = '';
   bool _isPasswordVisible = false;
-  AuthUtils authLogin = AuthUtils();
+  AuthenticationService authLogin = AuthenticationService();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+    _initLocalNotifications();
+  }
+
+  void _initLocalNotifications() async {
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+            iOS: DarwinInitializationSettings(),
+            android: AndroidInitializationSettings('@mipmap/ic_launcher'));
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
 
   Future<void> _login() async {
-    var auth = authLogin.isLoggedIn();
-    if (await auth) {
-      print("Yep, logged in");
-    } else {
-      print('Nope, not logged in');
-    }
-    print('Login function called');
     if (_formKey.currentState!.validate()) {
-      print('Form validated, proceeding with login');
       _formKey.currentState!.save();
-
-   
 
       AuthenticationService authLogin = AuthenticationService();
       bool loginSuccess = await authLogin.login(_username, _password);
 
+      // make sure after the asynchronous operation that the widget is still
+      // part of the widget tree before attempting to use the context.
+      // This check prevents issues caused by the widget being
+      // disposed of while the async operation is in progress.
+      if (!mounted) return;
 
       if (loginSuccess) {
         Navigator.of(context).pushReplacement(
@@ -66,13 +80,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: AppPallete.backgroundColor,
-        body: Padding(
-          padding: EdgeInsets.all(15.0),
-          child: Form(
-            key: _formKey,
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      backgroundColor: AppPallete.backgroundColor,
+      body: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               SvgPicture.asset('assets/images/CircleLogo.svg'),
               const Text(
                 "WaterIQ Cloud",
@@ -87,19 +102,56 @@ class _LoginScreenState extends State<LoginScreen> {
               _loginButton(context),
               const SizedBox(height: 10),
               RichText(
-                  text: TextSpan(
-                      text: 'Having trouble signing in? ',
-                      style: Theme.of(context).textTheme.titleMedium,
-                      children: [
+                text: TextSpan(
+                  text: 'Having trouble signing in? ',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  children: [
                     TextSpan(
                       text: 'Tap Here',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AppPallete.blue, fontWeight: FontWeight.bold),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () async {
+                          final Uri emailUri = Uri(
+                            scheme: 'mailto',
+                            path: 'support@wateriqtech.com',
+                            query:
+                                'subject=Support Needed&body=Describe your issue here',
+                          );
+                          if (await canLaunchUrl(emailUri)) {
+                            await (
+                              Uri emailUri, {
+                              LaunchMode mode = LaunchMode.platformDefault,
+                              WebViewConfiguration webViewConfiguration =
+                                  const WebViewConfiguration(),
+                              BrowserConfiguration browserConfiguration =
+                                  const BrowserConfiguration(),
+                              String? webOnlyWindowName,
+                            }) async {
+                              if ((mode == LaunchMode.inAppWebView ||
+                                      mode == LaunchMode.inAppBrowserView) &&
+                                  !(emailUri.scheme == 'https' ||
+                                      emailUri.scheme == 'http')) {
+                                throw ArgumentError.value(emailUri, 'emailUri',
+                                    'To use an in-app web view, you must provide an http(s) URL.');
+                              }
+                            }(emailUri);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Could not open email app.')),
+                            );
+                          }
+                        },
                     )
-                  ]))
-            ]),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   Widget _userCredentials(BuildContext context) => AutofillGroup(

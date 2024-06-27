@@ -14,7 +14,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<List<WiqcNotification>> listNotifications() async {
     var box = Hive.box<WiqcNotification>('notifications');
     return box.values.map((notification) {
-      notification.isRead ??= false;
+      notification.isRead;
       return notification;
     }).toList();
   }

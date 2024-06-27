@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
+import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
 import 'package:wateriqcloud_mobile/services/storage/storage_manager.dart';
 import '../services/wiqc_api_services/api_services.dart';
 import 'dart:math';
@@ -24,8 +25,8 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
   List<FlSpot> chartData = [];
   FlSpot? selectedSpot; //state variable for selected spots
   bool isLoading = true;
-
-  int yAxisInterval = 2; // Adjust this value as needed
+  final _apiService = ChartDataApi(storage: SecureStorageManager.storage);
+  int yAxisInterval = 2;
 
   LineTooltipItem getTooltipForSelectedSpot(FlSpot spot) {
     final DateTime time = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
@@ -44,8 +45,6 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
     return '';
   }
 
-  final _apiService = ChartDataApi(storage: SecureStorageManager.storage);
-
   @override
   void initState() {
     super.initState();
@@ -53,6 +52,9 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
   }
 
   Future<void> _fetchChartData() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       final data = await _apiService.fetchChartData(
           widget.unitId.toString(), widget.parameterName);
@@ -61,46 +63,40 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
         isLoading = false;
       });
     } catch (e) {
-      // Handle error
       setState(() {
-        isLoading = true;
+        isLoading = false;
       });
-      throw Exception(e);
+      print('Error fetching chart data: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
-      body: _buildBody(context),
-    );
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: darkBlue,
-      title: _buildAppBarTitle(),
-      centerTitle: true,
-    );
-  }
-
-  Widget _buildAppBarTitle() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: darkBlue),
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: SvgPicture.asset(
+      appBar: AppBar(
+        backgroundColor: AppPallete.darkBlue,
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: darkBlue),
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: SvgPicture.asset(
                 'assets/images/CircleLogo.svg',
-            height: 45,
-          ),
+                height: 45,
+              ),
+            ),
+          ],
         ),
-      ],
+        centerTitle: true,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _fetchChartData,
+        child: _buildBody(context),
+      ),
     );
   }
 
@@ -115,26 +111,29 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
   }
 
   Widget _buildChartData(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).size.height * 0.10,
-        bottom: MediaQuery.of(context).size.height * 0.01,
-        right: MediaQuery.of(context).size.width * 0.04,
-        left: MediaQuery.of(context).size.width * 0.02,
-      ),
-      child: Column(
-        children: <Widget>[
-          Text(
-            '${widget.parameterName} chart',
-            style: const TextStyle(
-              color: darkBlue,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).size.height * 0.10,
+          bottom: MediaQuery.of(context).size.height * 0.01,
+          right: MediaQuery.of(context).size.width * 0.04,
+          left: MediaQuery.of(context).size.width * 0.02,
+        ),
+        child: Column(
+          children: <Widget>[
+            Text(
+              '${widget.parameterName} chart',
+              style: const TextStyle(
+                color: darkBlue,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 5),
-          _buildLineChart(context),
-        ],
+            const SizedBox(height: 5),
+            _buildLineChart(context),
+          ],
+        ),
       ),
     );
   }
@@ -150,6 +149,21 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
   }
 
   LineChartData _lineChartData() {
+    Map<String, Map<String, double>> parameterRanges = {
+      'cport2': {'minY': 120.0, 'maxY': 128.0},
+      'vport2': {'minY': 0.0, 'maxY': 6.0},
+      'vport1': {'minY': 0.0, 'maxY': 6.0},
+      'temp': {'minY': 0.0, 'maxY': 100.0},
+      'ph': {'minY': 0.0, 'maxY': 10.0},
+      'orp': {'minY': 150.0, 'maxY': 500.0},
+      'spcond': {'minY': 2600.0, 'maxY': 2750.0},
+      'turb': {'minY': -15.0, 'maxY': 25.0},
+      'chl': {'minY': 100.0, 'maxY': 135.0},
+      'bg': {'minY': 300.0, 'maxY': 450.0},
+      'hdo': {'minY': 0.0, 'maxY': 15.0},
+      'hdo_per': {'minY': 0.0, 'maxY': 100.0},
+    };
+
     double minX = chartData.isNotEmpty ? chartData.first.x : 0;
     double maxX = chartData.isNotEmpty ? chartData.last.x : 0;
 
@@ -157,18 +171,21 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
         chartData.isNotEmpty ? chartData.map((e) => e.y).reduce(min) : 0;
     double maxY =
         chartData.isNotEmpty ? chartData.map((e) => e.y).reduce(max) : 0;
+
+    if (parameterRanges.containsKey(widget.parameterName)) {
+      minY = parameterRanges[widget.parameterName]!['minY']!;
+      maxY = parameterRanges[widget.parameterName]!['maxY']!;
+    }
+
     return LineChartData(
       backgroundColor: const Color.fromARGB(255, 220, 220, 220),
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
-          tooltipBgColor: Colors.blue,
           fitInsideHorizontally: true,
           fitInsideVertically: true,
           getTooltipItems: (List<LineBarSpot> touchedSpots) {
             if (selectedSpot != null) {
-              return [
-                getTooltipForSelectedSpot(selectedSpot!)
-              ]; 
+              return [getTooltipForSelectedSpot(selectedSpot!)];
             }
             return [];
           },
@@ -216,7 +233,6 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
               } else {
                 return Container(); // Return an empty container for non-4th values
               }
-              
             },
           ),
         ),
@@ -264,12 +280,9 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
           ),
           belowBarData: BarAreaData(
             show: false,
-           
           ),
         ),
       ],
     );
   }
-
-  
 }

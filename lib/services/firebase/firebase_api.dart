@@ -5,7 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:wateriqcloud_mobile/main.dart';
-import 'package:wateriqcloud_mobile/services/auth_service.dart';
+import 'package:wateriqcloud_mobile/services/auth_services/auth_service.dart';
 import 'package:wateriqcloud_mobile/views/notification_screen.dart';
 import '../../models/wiqc_notifications.dart';
 
@@ -36,7 +36,6 @@ class FirebaseApi {
     try {
       await firebaseMessaging.requestPermission();
       final FCMToken = await firebaseMessaging.getToken();
-      print('Token: $FCMToken');
     } catch (e) {
       print('Error initializing notifications: $e');
     }
@@ -107,7 +106,7 @@ class FirebaseApi {
       payload: message.data,
     );
 
-    notification.isRead ??= false;
+    notification.isRead;
 
     // Save the notification to Hive
     await box.add(notification);
@@ -119,7 +118,6 @@ class FirebaseApi {
   /// Handles notif tap
   Future<void> _handleNotificationTap(RemoteMessage message) async {
     final loggedIn = await AuthenticationService().isLoggedIn();
-    print("loggin in status: $loggedIn");
     if (loggedIn) {
       navigatorKey.currentState
           ?.pushNamed(NotificationScreen.route, arguments: message);
@@ -180,7 +178,7 @@ class FirebaseApi {
         body: message.notification?.body ?? 'No Body',
         payload: message.data,
       );
-      notification.isRead ??= false;
+      notification.isRead;
       print('Saving notification...');
       await box.add(notification);
       print('Notification saved');
