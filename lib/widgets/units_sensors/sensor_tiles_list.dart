@@ -16,7 +16,6 @@ class SensorTilesList extends StatelessWidget {
     required this.reportDate,
   });
 
-  
   // FORMAT DATE
   String _formatReportDate(dynamic reportDate) {
     return reportDate != null
@@ -29,48 +28,22 @@ class SensorTilesList extends StatelessWidget {
       Map latestReport, String telemetryType) {
     List<Map<String, String>> sensorData = [
       {'name': 'cport2', 'value': latestReport['cport2'] ?? 'N/A'},
-      {'name': 'vport2', 'value': latestReport['vport2'] ?? 'N/A'},
       {'name': 'vport1', 'value': latestReport['vport1'] ?? 'N/A'},
-      // Add other sensors...
+      {'name': 'vport2', 'value': latestReport['vport2'] ?? 'N/A'},
     ];
     // Optionally, add more sensors based on telemetryType
     if (telemetryType == 'telemetry_monitoring' ||
         telemetryType == 'monitoring_only') {
       sensorData.addAll([
-        {
-          'name': 'Temp',
-          'value': '${latestReport['temp']?.toString() ?? 'N/A'}°C'
-        },
-        {
-          'name': 'pH',
-          'value': '${latestReport['pH']?.toString() ?? 'N/A'} units'
-        },
-        {
-          'name': 'Orp',
-          'value': '${latestReport['orp']?.toString() ?? 'N/A'} (mV)'
-        },
-        {
-          'name': 'Spcond',
-          'value': '${latestReport['spcond']?.toString() ?? 'N/A'} (µS/cm)'
-        },
-        {
-          'name': 'Turb',
-          'value': '${latestReport['turb']?.toString() ?? 'N/A'} (FNU)'
-        },
-        {
-          'name': 'Chl',
-          'value': '${latestReport['chl']?.toString() ?? 'N/A'} (µg/L)'
-        },
-        {
-          'name': 'Bg',
-          'value': '${latestReport['bg']?.toString() ?? 'N/A'} (PPB)'
-        },
-        {'name': 'Hdo', 'value': latestReport['hdo']?.toString() ?? 'N/A'},
-        {
-          'name': 'Hdo per',
-          'value': '${latestReport['hdo_per']?.toString() ?? 'N/A'}%'
-        }
-        // Add other sensor data...
+        {'name': 'Temp', 'value': latestReport['temp'] ?? 'N/A'},
+        {'name': 'pH', 'value': latestReport['ph'] ?? 'N/A'},
+        {'name': 'Orp', 'value': latestReport['orp'] ?? 'N/A'},
+        {'name': 'Spcond', 'value': latestReport['spcond'] ?? 'N/A'},
+        {'name': 'Turb', 'value': latestReport['turb'] ?? 'N/A'},
+        {'name': 'Chl', 'value': latestReport['chl'] ?? 'N/A'},
+        {'name': 'Bg', 'value': latestReport['bg'] ?? 'N/A'},
+        {'name': 'Hdo', 'value': latestReport['hdo'] ?? 'N/A'},
+        {'name': 'Hdo per', 'value': latestReport['hdo_per'] ?? 'N/A'}
       ]);
     }
     return sensorData;
@@ -78,10 +51,9 @@ class SensorTilesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     List<Map<String, String>> sensorData =
         _prepareSensorData(latestReport, telemetryType);
-    String reportDate = _formatReportDate(latestReport['report_date']);
+    // String reportDate = _formatReportDate(reportDate);
 
     return GridView.builder(
       itemCount: sensorData.length,

@@ -21,7 +21,7 @@ class SensorTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var formatValue = double.tryParse(value)?.toStringAsFixed(2) ?? 'N/A';
-    return Card(
+    return Card.filled(
       color: darkBlue,
       elevation: 12.0,
       shadowColor: darkBlue,
@@ -64,7 +64,7 @@ class SensorTile extends StatelessWidget {
                     TextSpan(
                       text: reportDate,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 8,
                       ),
                     )
                   ],

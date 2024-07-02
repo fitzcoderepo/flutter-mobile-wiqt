@@ -1,7 +1,5 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
 import '../models/wiqc_notifications.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -16,9 +14,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<List<WiqcNotification>> listNotifications() async {
     var box = Hive.box<WiqcNotification>('notifications');
     return box.values.map((notification) {
-      if (notification.isRead == null) {
-        notification.isRead = false;
-      }
+      notification.isRead;
       return notification;
     }).toList();
   }

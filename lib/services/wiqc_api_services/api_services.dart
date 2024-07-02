@@ -10,7 +10,7 @@ class ProjectApi {
   ProjectApi({required this.storage});
 
   // FETCH USER PROJECT
-  Future<dynamic> fetchProjectData() async {
+  Future<Map<String, dynamic>> fetchProjectData() async {
     // var baseUrl = urls.BaseUrl();
     final token = await storage.read(key: 'auth_token');
     final response = await http.get(
@@ -19,6 +19,8 @@ class ProjectApi {
     );
 
     if (response.statusCode == 200) {
+      // final jsonResponse = json.decode(response.body);
+      // return jsonResponse['units'];
       return json.decode(response.body);
     } else {
       throw Exception('Failed to load project data');
@@ -72,7 +74,9 @@ class ChartDataApi {
   final FlutterSecureStorage storage;
   final baseUrl = BaseUrl.getBaseUrl();
   ChartDataApi({required this.storage});
-      Future<List<FlSpot>> fetchChartData(String unitId, String parameterName) async {
+
+  Future<List<FlSpot>> fetchChartData(
+      String unitId, String parameterName) async {
     var baseUrl = BaseUrl.getBaseUrl();
     final token = await storage.read(key: 'auth_token');
     final response = await http.get(
@@ -81,17 +85,25 @@ class ChartDataApi {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body)['results'];
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      final List<dynamic> data = jsonResponse['results'];
       final currentTime = DateTime.now();
-      final twentyFourHoursAgo = currentTime.subtract(const Duration(hours: 24));
-
+      final twentyFourHoursAgo =
+          currentTime.subtract(const Duration(hours: 24));
       final chartData = data
-          .where((report) => DateTime.parse(report['report_date']).isAfter(twentyFourHoursAgo))
+          .where((report) =>
+              DateTime.parse(report['report_date']).isAfter(twentyFourHoursAgo))
           .map<FlSpot>((report) {
-            double x = DateTime.parse(report['report_date']).millisecondsSinceEpoch.toDouble();
-            double y = double.tryParse(report[parameterName]?.toString() ?? '0') ?? 0;
-            return FlSpot(x, y);
-          }).toList();
+        double x = DateTime.parse(report['report_date'])
+            .millisecondsSinceEpoch
+            .toDouble();
+        double y =
+            double.tryParse(report[parameterName]?.toString() ?? '0') ?? 0;
+        return FlSpot(x, y);
+      }).toList();
+
+      // sort chart data by the x value (report_date) in ascending order
+      chartData.sort((a, b) => a.x.compareTo(b.x));
 
       return chartData;
     } else {
