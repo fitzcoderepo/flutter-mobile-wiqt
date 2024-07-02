@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
 import 'package:wateriqcloud_mobile/services/storage/storage_manager.dart';
 import 'package:wateriqcloud_mobile/services/wiqc_api_services/api_services.dart';
@@ -48,12 +47,12 @@ class _HomePageState extends State<HomePage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Error'),
-          content: Text('Failed to load project data. Please try again later.'),
+          title: const Text('Error'),
+          content: const Text('Failed to load project data. Please try again later.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         ),

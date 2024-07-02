@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import '../../views/parameter_chart_screen.dart';
 
 const Color lightBlue = Color(0xFFD3E8F8);

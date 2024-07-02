@@ -1,11 +1,9 @@
 // ignore_for_file: avoid_print
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
 import 'package:wateriqcloud_mobile/services/auth_services/auth_service.dart';
 import 'package:wateriqcloud_mobile/views/home_page.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -101,52 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
               _loginButton(context),
               const SizedBox(height: 10),
-              RichText(
-                text: TextSpan(
-                  text: 'Having trouble signing in? ',
-                  style: Theme.of(context).textTheme.titleMedium,
-                  children: [
-                    TextSpan(
-                      text: 'Tap Here',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppPallete.blue, fontWeight: FontWeight.bold),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () async {
-                          final Uri emailUri = Uri(
-                            scheme: 'mailto',
-                            path: 'support@wateriqtech.com',
-                            query:
-                                'subject=Support Needed&body=Describe your issue here',
-                          );
-                          if (await canLaunchUrl(emailUri)) {
-                            await (
-                              Uri emailUri, {
-                              LaunchMode mode = LaunchMode.platformDefault,
-                              WebViewConfiguration webViewConfiguration =
-                                  const WebViewConfiguration(),
-                              BrowserConfiguration browserConfiguration =
-                                  const BrowserConfiguration(),
-                              String? webOnlyWindowName,
-                            }) async {
-                              if ((mode == LaunchMode.inAppWebView ||
-                                      mode == LaunchMode.inAppBrowserView) &&
-                                  !(emailUri.scheme == 'https' ||
-                                      emailUri.scheme == 'http')) {
-                                throw ArgumentError.value(emailUri, 'emailUri',
-                                    'To use an in-app web view, you must provide an http(s) URL.');
-                              }
-                            }(emailUri);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Could not open email app.')),
-                            );
-                          }
-                        },
-                    )
-                  ],
-                ),
-              ),
+              
             ],
           ),
         ),
