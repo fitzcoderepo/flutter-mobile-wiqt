@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
+
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:wateriqcloud_mobile/services/data_service/data_services.dart';
 import 'package:wateriqcloud_mobile/services/storage/storage_manager.dart';
 import 'package:wateriqcloud_mobile/services/wiqc_api_services/api_services.dart';
-import 'unit_detail_screen.dart';
-import '../widgets/drawer.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:wateriqcloud_mobile/views/unit_detail_screen.dart';
+import 'package:wateriqcloud_mobile/widgets/drawer.dart';
+import 'package:wateriqcloud_mobile/widgets/home_page/dashboard_cards.dart';
+import 'package:wateriqcloud_mobile/widgets/home_page/unit_list.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,98 +18,183 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final DataService _dataService = DataService();
+
   List<dynamic> units = [];
-  bool isLoading = true;
-  dynamic projectData;
-  final _projectApiService = ProjectApi(storage: SecureStorageManager.storage);
-  final _unitApiService = UnitApi(storage: SecureStorageManager.storage);
   List<LatLng> unitLocations = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchProjectData().then((_) {
-      _fetchAllUnitDetails();
-      collectUnitLocations();
-    });
+    _loadInitialData();
   }
 
-  Future<void> _fetchProjectData() async {
-    try {
-      Map<String, dynamic> data = await _projectApiService.fetchProjectData();
-      setState(() {
-        projectData = data;
-        units = projectData['units'];
-        isLoading = false;
-      });
-      _fetchAllUnitDetails(); // fetch unit details after project data is loaded
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: const Text('Failed to load project data. Please try again later.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      // throw Exception(e);
-    }
-  }
-
-  Future<void> _fetchAllUnitDetails() async {
+  Future<void> _loadInitialData() async {
     setState(() {
       isLoading = true;
     });
-    isLoading = true;
-    List<Future> fetchTasks = [];
-    for (var unit in units) {
-      var unitId = unit['id'];
-      if (unitId == null) continue;
-      var task = _unitApiService
-          .fetchUnitDetails(unitId.toString())
-          .then((result) {})
-          .catchError((e) {
-        // Handle error
-      });
-
-      fetchTasks.add(task);
-    }
-    await Future.wait(fetchTasks);
+    List<dynamic> fetchedUnits = await _dataService.loadInitialData(context);
     setState(() {
+      units = fetchedUnits;
+      collectUnitLocations(units, unitLocations);
       isLoading = false;
     });
   }
 
   Future<void> _refreshData() async {
-    await _fetchProjectData();
-    await _fetchAllUnitDetails();
+    await _loadInitialData();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    var logo = 'assets/images/CircleLogo.svg';
+
+    if (isLoading) {
+      return Scaffold(
+          appBar: AppBar(
+            title: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                decoration: const BoxDecoration(
+                    color: Colors.white, shape: BoxShape.circle),
+                child: SvgPicture.asset(
+                  logo,
+                  height: 45,
+                ),
+              ),
+            ]),
+            centerTitle: true,
+          ),
+          body: const Center(
+            child: CircularProgressIndicator(),
+          ));
+    }
+    
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: darkBlue,
+        title: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            decoration: const BoxDecoration(
+                color: Colors.white, shape: BoxShape.circle),
+            child: SvgPicture.asset(
+              logo,
+              height: 45,
+            ),
+          ),
+        ]),
+        centerTitle: true,
+      ),
+      drawer: const MyDrawer(),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: <Widget>[
+                      const SizedBox(height: 5),
+                      const Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          color: darkBlue,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 35),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          DashboardCards(
+                            title: 'Total Units',
+                            count: units.length.toString(),
+                            icon: Icons.hub,
+                            color: darkBlue,
+                            tooltipMessage:
+                                'Total number of units in your dashboard',
+                          ),
+                          DashboardCards(
+                            title: 'Active',
+                            count: _countActiveUnits().toString(),
+                            icon: Icons.cloud_outlined,
+                            color: Colors.blue,
+                            tooltipMessage: 'Number of units currently active',
+                          ),
+                          DashboardCards(
+                            title: 'Inactive',
+                            count: _countInactiveUnits().toString(),
+                            icon: Icons.cloud_off_rounded,
+                            color: const Color.fromARGB(252, 178, 178, 178),
+                            tooltipMessage:
+                                'Number of units that are not active',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 25),
+                      // call unit list widget
+                      UnitList(units: units,isLoading: isLoading),
+                    ],
+                  ),
+                ),
+              ),
+      ),
+      floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            if (unitLocations.isNotEmpty) {
+              _openMapModal(context, units, unitLocations);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No location data is available.')),
+              );
+            }
+          },
+          mini: true,
+          splashColor: Colors.blue,
+          elevation: 15,
+          child: const Icon(Icons.map_outlined, color: darkBlue)),
+    );
+  }
+
+  int _countActiveUnits() {
+    // count active units
+    return units
+        .where((unit) =>
+            unit['installed'] == true && unit['decommissioned'] == false)
+        .length;
+  }
+
+  int _countInactiveUnits() {
+    // count inactive units
+    return units
+        .where((unit) =>
+            unit['decommissioned'] == true && unit['installed'] == true)
+        .length;
+  }
+
+// function to parse to double
   double? tryParseToDouble(dynamic value) {
     if (value == null) {
       return null;
-    } // Return null immediately if value is null
+    }
     if (value is double) {
-      return value; // If it's already a double, return it directly
+      return value;
     }
     if (value is int) {
-      return value.toDouble(); // Convert int to double
+      return value.toDouble();
     }
     if (value is String) {
-      return double.tryParse(value); // Try parsing string to double
+      return double.tryParse(value);
     }
-    return null; // Return null for any other type that can't be handled
+    return null;
   }
 
-  void collectUnitLocations() {
+// Function to get unit coordinates
+  void collectUnitLocations(List<dynamic> units, List<LatLng> unitLocations) {
     unitLocations.clear();
 
     for (dynamic value in units) {
@@ -118,159 +206,42 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // keep loading indicator up while still gathering data
-    if (isLoading) {
-      return Scaffold(
-          appBar: AppBar(
-            title: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                decoration: const BoxDecoration(
-                    color: AppPallete.whiteColor, shape: BoxShape.circle),
-                child: SvgPicture.asset(
-                  'assets/images/CircleLogo.svg',
-                  height: 45,
-                ),
-              ),
-            ]),
-            centerTitle: true,
-          ),
-          body: const Center(
-            child: CircularProgressIndicator(),
-          ));
-    }
-    // when all data has been fetched, show home page
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppPallete.darkBlue,
-        title: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            decoration: const BoxDecoration(
-                color: AppPallete.whiteColor, shape: BoxShape.circle),
-            child: SvgPicture.asset(
-              'assets/images/CircleLogo.svg',
-              height: 45,
-            ),
-          ),
-        ]),
-        centerTitle: true,
-      ),
-      drawer: const MyDrawer(),
-      body: Column(
-        children: <Widget>[
-          const Padding(
-            padding: EdgeInsets.only(
-              top: 10,
-            ),
-            child: Text('My Dashboard',
-                style: TextStyle(
-                  color: darkBlue,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                )),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(top: 3, bottom: 20),
-          ),
-          Expanded(
-              child: RefreshIndicator(
-                  onRefresh: _refreshData,
-                  child: ListView.builder(
-                      itemCount: units.length,
-                      itemBuilder: (context, index) {
-                        var unit = units[index];
-                        var serverId = unit['id'].toString();
-                        var unitId = unit['unit_id'].toString();
-                        return Card(
-                            elevation: 4,
-                            shadowColor: darkBlue,
-                            margin: const EdgeInsets.all(7),
-                            child: ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              enableFeedback: true,
-                              leading: Container(
-                                padding: const EdgeInsets.only(right: 20.0),
-                                decoration: const BoxDecoration(
-                                    border: Border(
-                                        right: BorderSide(
-                                            width: 1.0,
-                                            color: AppPallete.darkBlue))),
-                                child: const Icon(Icons.drag_indicator_rounded,
-                                    size: 30,
-                                    color: Color.fromARGB(255, 169, 177, 183)),
-                              ),
-                              title: Text(unitId,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color.fromARGB(255, 5, 113, 196))),
-                              subtitle: Row(
-                                children: <Widget>[
-                                  Text(serverId,
-                                      style: const TextStyle(
-                                          color: AppPallete.darkBlue,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10))
-                                ],
-                              ),
-                              trailing: const Icon(Icons.keyboard_arrow_right,
-                                  color: Color.fromARGB(255, 5, 113, 196),
-                                  size: 40.0),
-                              tileColor:
-                                  const Color.fromARGB(255, 236, 236, 236),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => UnitDetailScreen(
-                                      unitId: int.parse(unit['id'].toString()),
-                                      title: '',
-                                    ),
-                                  ),
-                                );
-                              },
-                            ));
-                      })))
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            if (unitLocations.isNotEmpty) {
-              _openMapModal(context, unitLocations);
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No location data is available.')),
-              );
-            }
-          },
-          backgroundColor: lightBlue,
-          elevation: 15,
-          child: const Icon(Icons.map_outlined, color: darkBlue)),
-    );
-  }
-}
+// custom map markers to display the unit id and ssid
+  Set<Marker> _createMarkers(List<dynamic> units, List<LatLng> unitLocations) {
+    return unitLocations.map((location) {
+      var unit = units.firstWhere(
+          (unit) =>
+              tryParseToDouble(unit['lat']) == location.latitude &&
+              tryParseToDouble(unit['long']) == location.longitude,
+          orElse: () => null);
 
-void _openMapModal(BuildContext context, List<LatLng> unitLocations) {
-  showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Scaffold(
-          // height: MediaQuery.of(context).size.height *
-          // 0.75, // Adjust the size as needed
-          body: GoogleMap(
-            mapType: MapType.hybrid,
-            initialCameraPosition: CameraPosition(
-                target: unitLocations
-                    .first, // Initial position to the first unit location
-                zoom: 2.0),
-            markers: Set.from(unitLocations.map((location) => Marker(
-                  // Generate a unique markerId for each location
-                  markerId: MarkerId(location.toString()),
-                  position: location,
-                ))),
-            myLocationEnabled: true,
-          ),
-        );
-      });
+      return Marker(
+        markerId: MarkerId(location.toString()),
+        position: location,
+        infoWindow: InfoWindow(
+          title:
+              'Unit: ${unit != null ? unit['unit_id'].toString() : 'Unknown'}',
+          snippet: 'ID: ${unit != null ? unit['id'] : 'Unknown'}',
+        ),
+      );
+    }).toSet();
+  }
+
+// google maps function
+  void _openMapModal(
+      BuildContext context, List<dynamic> units, List<LatLng> unitLocations) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Scaffold(
+            body: GoogleMap(
+              mapType: MapType.hybrid,
+              initialCameraPosition:
+                  CameraPosition(target: unitLocations.first, zoom: 2.0),
+              markers: _createMarkers(units, unitLocations),
+              myLocationEnabled: true,
+            ),
+          );
+        });
+  }
 }

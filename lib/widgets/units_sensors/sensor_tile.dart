@@ -22,11 +22,10 @@ class SensorTile extends StatelessWidget {
   Widget build(BuildContext context) {
     var formatValue = double.tryParse(value)?.toStringAsFixed(2) ?? 'N/A';
     return Card.filled(
-      color: darkBlue,
-      elevation: 12.0,
-      shadowColor: darkBlue,
-      margin: const EdgeInsets.all(2),
+      elevation: 4.0,
+      shadowColor: darkBlue,  
       child: InkWell(
+        splashColor: Colors.blue,
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -37,39 +36,35 @@ class SensorTile extends StatelessWidget {
             ),
           );
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '$sensorName\n',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        decoration: TextDecoration.underline,
-                        color: Colors.white,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '$formatValue\n\n',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: reportDate,
-                      style: const TextStyle(
-                        fontSize: 8,
-                      ),
-                    )
-                  ],
-                ))
-          ],
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+              children: [
+                Text(
+                  sensorName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: darkBlue,
+                  ),
+                ),
+                Text(formatValue, style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.blue[800],
+                )),
+                const SizedBox(height: 5),
+                Text(
+                  reportDate,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[800],
+                  ),
+                  textAlign: TextAlign.center
+                ),
+              ],
+            ),
+          
         ),
       ),
     );

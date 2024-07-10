@@ -123,7 +123,7 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
         child: Column(
           children: <Widget>[
             Text(
-              '${widget.parameterName} chart',
+              widget.parameterName.toUpperCase(),
               style: const TextStyle(
                 color: darkBlue,
                 fontSize: 20,

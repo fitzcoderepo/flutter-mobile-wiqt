@@ -49,6 +49,10 @@ dependencies:
   url_launcher_platform_interface: ^2.3.2
   hive: any
   path_provider: any
+  weather: ^3.1.1
+  provider: ^6.1.2
+  xml_rpc: ^0.5.0
+  xml: ^6.5.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
