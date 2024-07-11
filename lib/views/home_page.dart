@@ -88,61 +88,59 @@ class _HomePageState extends State<HomePage> {
       drawer: const MyDrawer(),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: <Widget>[
-                      const SizedBox(height: 5),
-                      const Text(
-                        'Dashboard',
-                        style: TextStyle(
+        child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 5),
+                    const Text(
+                      'Dashboard',
+                      style: TextStyle(
+                        color: darkBlue,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        DashboardCards(
+                          title: 'Total Units',
+                          count: units.length.toString(),
+                          icon: Icons.hub,
                           color: darkBlue,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w500,
+                          tooltipMessage:
+                              'Total number of units in your dashboard',
                         ),
-                      ),
-                      const SizedBox(height: 35),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          DashboardCards(
-                            title: 'Total Units',
-                            count: units.length.toString(),
-                            icon: Icons.hub,
-                            color: darkBlue,
-                            tooltipMessage:
-                                'Total number of units in your dashboard',
-                          ),
-                          DashboardCards(
-                            title: 'Active',
-                            count: _countActiveUnits().toString(),
-                            icon: Icons.cloud_outlined,
-                            color: Colors.blue,
-                            tooltipMessage: 'Number of units currently active',
-                          ),
-                          DashboardCards(
-                            title: 'Inactive',
-                            count: _countInactiveUnits().toString(),
-                            icon: Icons.cloud_off_rounded,
-                            color: const Color.fromARGB(252, 178, 178, 178),
-                            tooltipMessage:
-                                'Number of units that are not active',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 25),
+                        DashboardCards(
+                          title: 'Active',
+                          count: _countActiveUnits().toString(),
+                          icon: Icons.cloud_outlined,
+                          color: Colors.blue,
+                          tooltipMessage: 'Number of units currently active',
+                        ),
+                        DashboardCards(
+                          title: 'Inactive',
+                          count: _countInactiveUnits().toString(),
+                          icon: Icons.cloud_off_rounded,
+                          color: const Color.fromARGB(252, 178, 178, 178),
+                          tooltipMessage:
+                              'Number of units that are not active',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
                       // call unit list widget
-                      UnitList(units: units,isLoading: isLoading),
-                    ],
-                  ),
+                    UnitList(units: units,isLoading: isLoading),
+                    
+                  ],
                 ),
               ),
       ),
+      
       floatingActionButton: FloatingActionButton(
           onPressed: () {
             if (unitLocations.isNotEmpty) {
@@ -172,7 +170,7 @@ class _HomePageState extends State<HomePage> {
     // count inactive units
     return units
         .where((unit) =>
-            unit['decommissioned'] == true && unit['installed'] == true)
+            unit['decommissioned'] == true && unit['installed'] == true || unit['decommissioned'] == true && unit['installed'] == false)
         .length;
   }
 

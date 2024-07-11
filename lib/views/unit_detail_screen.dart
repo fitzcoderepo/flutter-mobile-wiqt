@@ -124,7 +124,7 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
                             Text(
                               ssid,
                               style: const TextStyle(
-                                fontSize: 30,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w500,
                                 color: darkBlue,
                               ),

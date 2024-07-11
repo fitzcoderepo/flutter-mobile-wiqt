@@ -36,14 +36,14 @@ class SensorTilesList extends StatelessWidget {
         telemetryType == 'monitoring_only') {
       sensorData.addAll([
         {'name': 'temp', 'value': latestReport['temp'] ?? 'N/A'},
-        {'name': 'pH', 'value': latestReport['ph'] ?? 'N/A'},
-        {'name': 'Orp', 'value': latestReport['orp'] ?? 'N/A'},
-        {'name': 'Spcond', 'value': latestReport['spcond'] ?? 'N/A'},
-        {'name': 'Turb', 'value': latestReport['turb'] ?? 'N/A'},
-        {'name': 'Chl', 'value': latestReport['chl'] ?? 'N/A'},
-        {'name': 'Bg', 'value': latestReport['bg'] ?? 'N/A'},
-        {'name': 'Hdo', 'value': latestReport['hdo'] ?? 'N/A'},
-        {'name': 'Hdo per', 'value': latestReport['hdo_per'] ?? 'N/A'}
+        {'name': 'ph', 'value': latestReport['ph'] ?? 'N/A'},
+        {'name': 'orp', 'value': latestReport['orp'] ?? 'N/A'},
+        {'name': 'spcond', 'value': latestReport['spcond'] ?? 'N/A'},
+        {'name': 'turb', 'value': latestReport['turb'] ?? 'N/A'},
+        {'name': 'chl', 'value': latestReport['chl'] ?? 'N/A'},
+        {'name': 'bg', 'value': latestReport['bg'] ?? 'N/A'},
+        {'name': 'hdo', 'value': latestReport['hdo'] ?? 'N/A'},
+        {'name': 'hdo_per', 'value': latestReport['hdo_per'] ?? 'N/A'}
       ]);
     }
     return sensorData;

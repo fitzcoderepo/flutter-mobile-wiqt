@@ -31,7 +31,7 @@ class SensorTile extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => ParameterChartScreen(
                 unitId: unitId,
-                parameterName: sensorName.toLowerCase(),
+                parameterName: sensorName,
               ),
             ),
           );
