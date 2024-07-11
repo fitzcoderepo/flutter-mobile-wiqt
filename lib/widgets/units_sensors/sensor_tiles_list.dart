@@ -31,19 +31,19 @@ class SensorTilesList extends StatelessWidget {
       {'name': 'vport1', 'value': latestReport['vport1'] ?? 'N/A'},
       {'name': 'vport2', 'value': latestReport['vport2'] ?? 'N/A'},
     ];
-    // Optionally, add more sensors based on telemetryType
+    // add more sensors based on telemetryType
     if (telemetryType == 'telemetry_monitoring' ||
         telemetryType == 'monitoring_only') {
       sensorData.addAll([
-        {'name': 'Temp', 'value': latestReport['temp'] ?? 'N/A'},
-        {'name': 'pH', 'value': latestReport['ph'] ?? 'N/A'},
-        {'name': 'Orp', 'value': latestReport['orp'] ?? 'N/A'},
-        {'name': 'Spcond', 'value': latestReport['spcond'] ?? 'N/A'},
-        {'name': 'Turb', 'value': latestReport['turb'] ?? 'N/A'},
-        {'name': 'Chl', 'value': latestReport['chl'] ?? 'N/A'},
-        {'name': 'Bg', 'value': latestReport['bg'] ?? 'N/A'},
-        {'name': 'Hdo', 'value': latestReport['hdo'] ?? 'N/A'},
-        {'name': 'Hdo per', 'value': latestReport['hdo_per'] ?? 'N/A'}
+        {'name': 'temp', 'value': latestReport['temp'] ?? 'N/A'},
+        {'name': 'ph', 'value': latestReport['ph'] ?? 'N/A'},
+        {'name': 'orp', 'value': latestReport['orp'] ?? 'N/A'},
+        {'name': 'spcond', 'value': latestReport['spcond'] ?? 'N/A'},
+        {'name': 'turb', 'value': latestReport['turb'] ?? 'N/A'},
+        {'name': 'chl', 'value': latestReport['chl'] ?? 'N/A'},
+        {'name': 'bg', 'value': latestReport['bg'] ?? 'N/A'},
+        {'name': 'hdo', 'value': latestReport['hdo'] ?? 'N/A'},
+        {'name': 'hdo_per', 'value': latestReport['hdo_per'] ?? 'N/A'}
       ]);
     }
     return sensorData;
@@ -53,14 +53,12 @@ class SensorTilesList extends StatelessWidget {
   Widget build(BuildContext context) {
     List<Map<String, String>> sensorData =
         _prepareSensorData(latestReport, telemetryType);
-    // String reportDate = _formatReportDate(reportDate);
-
     return GridView.builder(
       itemCount: sensorData.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: sensorData.length < 4 ? 3 : 4,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
         crossAxisSpacing: 5,
         mainAxisSpacing: 5,
       ),
