@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'package:wateriqcloud_mobile/models/wiqc_notifications.dart';
+import 'package:wateriqcloud_mobile/services/location_provider.dart';
 import 'package:wateriqcloud_mobile/views/notification_screen.dart';
 import 'login.dart';
 import 'views/home_page.dart';
@@ -29,7 +31,14 @@ void main() async {
       print("There was an error registering the notification adapter");
     }
   }
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocationProvider("f78835cf68e368e135f658c04088b04e")),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 // class used to define global app settings (themes, routes, title, etc...)
@@ -49,7 +58,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const LoginScreen(), // Login route
         '/home': (context) => const HomePage(), // home route
-        '/notification_screen': (context) => const NotificationScreen(), // notifications
+        '/notification_screen': (context) =>
+            const NotificationScreen(), // notifications
       },
       navigatorKey: navigatorKey,
     );
