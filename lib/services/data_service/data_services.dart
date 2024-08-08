@@ -8,32 +8,33 @@ class DataService {
   final UnitApi _unitApiService =
       UnitApi(storage: SecureStorageManager.storage);
 
-  Future<Map<String, dynamic>> fetchProjectData() async {
-    return await _projectApiService.fetchProjectData();
+  Future<Map<String, dynamic>> fetchUserUnits() async {
+    return await _projectApiService.fetchUserUnits();
   }
 
+
   Future<void> fetchAllUnitDetails(List<dynamic> units) async {
-    List<Future> fetchTasks = [];
+    List<Future> fetchDetails = [];
     for (var unit in units) {
       var unitId = unit['id'];
       if (unitId == null) continue;
-      var task =
+      var fetchTask =
           _unitApiService.fetchUnitDetails(unitId.toString()).then((result) {
-        // result
       }).catchError((e) {
         // error
       });
 
-      fetchTasks.add(task);
+      fetchDetails.add(fetchTask);
     }
-    await Future.wait(fetchTasks);
+    await Future.wait(fetchDetails);
   }
 
   Future<List<dynamic>> loadInitialData(BuildContext context) async {
     List<dynamic> units = [];
     try {
-      Map<String, dynamic> projectData = await fetchProjectData();
-      units = projectData['units'];
+      Map<String, dynamic> projectData = await fetchUserUnits();
+      units = projectData['units'] ?? [];
+
       await fetchAllUnitDetails(units);
     } catch (e) {
       _showErrorDialog(context);
@@ -57,5 +58,4 @@ class DataService {
       ),
     );
   }
-
 }

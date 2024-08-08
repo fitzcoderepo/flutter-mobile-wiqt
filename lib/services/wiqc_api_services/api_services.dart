@@ -4,23 +4,70 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'api_url.dart';
 
+class DashboardUnitsApi {
+  final FlutterSecureStorage storage;
+  final baseUrl = BaseUrl.getBaseUrl();
+
+  DashboardUnitsApi({required this.storage});
+
+  Future<List<dynamic>> fetchAvailableUnits() async {
+    final token = await storage.read(key: 'auth_token');
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/v1/get-available-units/'),
+      headers: {'Authorization': 'Token $token'},
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception('Failed to load available units');
+    }
+  }
+
+  Future<void> addUnitsToDashboard(List<int> unitIds) async {
+    final token = await storage.read(key: 'auth_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/add-dashboard-unit/'),
+      headers: {
+        'Authorization': 'Token $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'unit_ids': unitIds}),
+    );
+    if (response.statusCode != 201) {
+      throw Exception('Failed to add unit to dashboard');
+    }
+  }
+
+  Future<void> removeUnitsFromDashboard(List<int> unitIds) async {
+    final token = await storage.read(key: 'auth_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/remove-dashboard-units/'),
+      headers: {
+        'Authorization': 'Token $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'unit_ids': unitIds}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to remove dashboard units');
+    }
+  }
+}
+
 class ProjectApi {
   final FlutterSecureStorage storage;
   final baseUrl = BaseUrl.getBaseUrl();
   ProjectApi({required this.storage});
 
-  // FETCH USER PROJECT
-  Future<Map<String, dynamic>> fetchProjectData() async {
-    // var baseUrl = urls.BaseUrl();
+  // FETCH USERS UNITS
+  Future<Map<String, dynamic>> fetchUserUnits() async {
     final token = await storage.read(key: 'auth_token');
     final response = await http.get(
-      Uri.parse('$baseUrl/api/v1/project-list'),
+      Uri.parse('$baseUrl/api/v1/get-units-list'),
       headers: {'Authorization': 'Token $token'},
     );
-
     if (response.statusCode == 200) {
-      // final jsonResponse = json.decode(response.body);
-      // return jsonResponse['units'];
       return json.decode(response.body);
     } else {
       throw Exception('Failed to load project data');
@@ -37,12 +84,12 @@ class UnitApi {
     final token = await storage.read(key: 'auth_token');
 
     final unitDetailResponse = await http.get(
-      Uri.parse('$baseUrl/api/v1/unit-detail/$unitId'),
+      Uri.parse('$baseUrl/api/v1/get-unit-details/$unitId'),
       headers: {'Authorization': 'Token $token'},
     );
 
     final unitReportResponse = await http.get(
-      Uri.parse('$baseUrl/api/v1/unit-reports-uid/$unitId'),
+      Uri.parse('$baseUrl/api/v1/get-unit-reports/$unitId'),
       headers: {'Authorization': 'Token $token'},
     );
 
@@ -50,7 +97,6 @@ class UnitApi {
         unitReportResponse.statusCode == 200) {
       final unitDetails = json.decode(unitDetailResponse.body);
       final unitReportData = json.decode(unitReportResponse.body);
-
       Map<String, dynamic> latestReport = {};
 
       if (unitReportData['results'] is List &&
@@ -59,7 +105,6 @@ class UnitApi {
       } else {
         latestReport = <String, dynamic>{};
       }
-
       return {
         'unitDetails': unitDetails,
         'latestReport': latestReport,
@@ -80,10 +125,9 @@ class ChartDataApi {
     var baseUrl = BaseUrl.getBaseUrl();
     final token = await storage.read(key: 'auth_token');
     final response = await http.get(
-      Uri.parse('$baseUrl/api/v1/unit-reports-uid/$unitId'),
+      Uri.parse('$baseUrl/api/v1/get-unit-reports/$unitId'),
       headers: {'Authorization': 'Token $token'},
     );
-
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
       final List<dynamic> data = jsonResponse['results'];

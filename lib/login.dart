@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _username = '';
   String _password = '';
   bool _isPasswordVisible = false;
-  AuthenticationService authLogin = AuthenticationService();
+  final AuthenticationService authLogin = AuthenticationService();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -43,8 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
-      AuthenticationService authLogin = AuthenticationService();
       bool loginSuccess = await authLogin.login(_username, _password);
 
       // make sure after the asynchronous operation that the widget is still

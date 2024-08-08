@@ -106,6 +106,9 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
           ],
         ),
         centerTitle: true,
+        iconTheme: const IconThemeData(
+            color: Colors.white,
+          )
       ),
       body: RefreshIndicator(
         onRefresh: _fetchUnitDetails,

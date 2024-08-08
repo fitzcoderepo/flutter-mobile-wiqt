@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AuthenticationService {
-
   Future<bool> login(String username, String password) async {
     var baseUrl = BaseUrl.getBaseUrl();
     final response = await http.post(
@@ -16,12 +15,33 @@ class AuthenticationService {
     );
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final token = data['token'];
-      await SecureStorageManager.storage.write(key: 'auth_token', value: token);
-      return true; // Login successful
+      try {
+        final data = json.decode(response.body);
+        final token = data['token'];
+        await SecureStorageManager.storage.write(key: 'auth_token', value: token);
+        await SecureStorageManager.storage.write(
+            key: 'user_groups', value: jsonEncode(data['groups']));
+
+        print(response.body);
+        return true; // Login successful
+
+      } catch (e) {
+        print('Failed to parse JSON: $e');
+        return false;
+      }
     } else {
-      return false; // Login failed
+      print('Server responded with status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      return false;
+    }
+  }
+
+  Future<List<String>> getUserGroups() async {
+    final groups = await SecureStorageManager.storage.read(key: 'user_groups');
+    if (groups != null) {
+      return List<String>.from(jsonDecode(groups));
+    } else {
+      throw Exception('Failed to get user groups');
     }
   }
 

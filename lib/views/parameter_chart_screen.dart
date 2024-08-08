@@ -92,6 +92,9 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
           ],
         ),
         centerTitle: true,
+        iconTheme: const IconThemeData(
+            color: Colors.white,
+          )
       ),
       body: RefreshIndicator(
         onRefresh: _fetchChartData,

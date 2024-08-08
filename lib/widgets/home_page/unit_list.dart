@@ -5,7 +5,7 @@ import '../../main.dart';
 class UnitList extends StatefulWidget {
   final List<dynamic> units;
   final bool isLoading;
-
+  
   const UnitList({super.key, required this.units, required this.isLoading});
 
   @override
@@ -27,12 +27,12 @@ class _UnitListState extends State<UnitList> {
       itemCount: widget.units.length,
       itemBuilder: (context, index) {
         var unit = widget.units[index];
-        var serverId = unit['id'].toString();
-        var unitId = unit['unit_id'].toString();
-        var lat = double.parse(unit['lat']);
-        var long = double.parse(unit['long']);
-        var installed = unit['installed'];
-        var decomm = unit['decommissioned'];
+        var serverId = unit['id']?.toString() ?? 'N/A';
+        var unitId = unit['unit_id']?.toString() ?? 'N/A';
+        var lat = double.tryParse(unit['lat']?.toString() ?? '0') ?? 0.0;
+        var long = double.tryParse(unit['long']?.toString() ?? '0') ?? 0.0;
+        var installed = unit['installed'] ?? false;
+        var decomm = unit['decommissioned'] ?? false;
       
         dynamic active;
         if (installed == true && decomm == false) {
@@ -57,7 +57,7 @@ class _UnitListState extends State<UnitList> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => UnitDetailScreen(
-                    unitId: int.parse(unit['id'].toString()),
+                    unitId: int.tryParse(unit['id']?.toString() ?? '0') ?? 0,
                     lat: lat,
                     long: long,
                     title: '',
