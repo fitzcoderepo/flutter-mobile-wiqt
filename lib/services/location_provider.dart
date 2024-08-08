@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:wateriqcloud_mobile/services/weather_service/weather_service.dart';
 import 'package:weather/weather.dart';
-import 'package:provider/provider.dart';
 
 class LocationProvider with ChangeNotifier {
   LatLng? _unitLocation;

@@ -170,22 +170,21 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: darkBlue,
-        title: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            decoration: const BoxDecoration(
-                color: Colors.white, shape: BoxShape.circle),
-            child: SvgPicture.asset(
-              logo,
-              height: 45,
+          backgroundColor: darkBlue,
+          title: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              decoration: const BoxDecoration(
+                  color: Colors.white, shape: BoxShape.circle),
+              child: SvgPicture.asset(
+                logo,
+                height: 45,
+              ),
             ),
-          ),
-        ]),
-        centerTitle: true,
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-        )
-      ),
+          ]),
+          centerTitle: true,
+          iconTheme: const IconThemeData(
+            color: Colors.white,
+          )),
       drawer: const MyDrawer(),
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -231,113 +230,125 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-              if (canManageUnits) ButtonBar(
-                children: [
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      elevation: 8,
-                      shadowColor: Colors.black,
-                      backgroundColor:
-                          showAddRemoveButtons ? Colors.grey.shade800 : darkBlue,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                    onPressed: () {
-                      setState(
-                        () {
-                          showAddRemoveButtons = !showAddRemoveButtons;
-                        },
-                      );
-                    },
-                    child: Text(
-                      showAddRemoveButtons ? "Cancel" : "+/- Units",
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w700)),
-                  )
-              ],
-            ),
-            if (showAddRemoveButtons) Visibility(
-                visible: showAddRemoveButtons,
-                child: ButtonBar(
-                  alignment: MainAxisAlignment.center,
+              if (canManageUnits)
+                OverflowBar(
+                  alignment: MainAxisAlignment.end,
                   children: [
-                    MultiSelectBottomSheetField(
-                      initialChildSize: .50,
-                      maxChildSize: .70,
-                      title: const Text("Add Units",
-                          style: TextStyle(fontSize: 14)),
-                      buttonIcon: const Icon(Icons.add_circle_outlined),
-                      buttonText: const Text(""),
-                      selectedColor: Colors.blue.withOpacity(.1),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.4),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(40)),
-                        border: Border.all(
-                          color: darkBlue,
-                          width: 1,
-                        ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        elevation: 8,
+                        shadowColor: Colors.black,
+                        backgroundColor: showAddRemoveButtons
+                            ? Colors.grey.shade800
+                            : darkBlue,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                       ),
-                      searchable: true,
-                      searchHint: "Search...",
-                      items: unitItems,
-                      listType: MultiSelectListType.CHIP,
-                      onConfirm: (values) {
-                        if (values.isNotEmpty) {
-                          setState(() {
-                            selectedUnitIds =
-                                values.map((e) => e['id'] as int).toList();
-                          });
-                          _addSelectedUnits();
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'No units were added to the dashboard')),
-                          );
-                        }
+                      onPressed: () {
+                        setState(
+                          () {
+                            showAddRemoveButtons = !showAddRemoveButtons;
+                          },
+                        );
                       },
-                    ),
-                    MultiSelectDialogField(
-                      title: const Text("Remove Units",
-                          style: TextStyle(fontSize: 14)),
-                      buttonIcon: const Icon(Icons.remove_circle),
-                      buttonText: const Text(""),
-                      selectedColor: const Color.fromARGB(255, 243, 33, 33)
-                          .withOpacity(.8),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 243, 33, 33)
-                            .withOpacity(0.4),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(40)),
-                        border: Border.all(
-                          color: darkBlue,
-                          width: 1,
-                        ),
-                      ),
-                      searchable: true,
-                      searchHint: "Search...",
-                      items: dashboardUnits,
-                      listType: MultiSelectListType.LIST,
-                      onConfirm: (values) {
-                        if (values.isNotEmpty) {
-                          setState(() {
-                            selectedUnitIds =
-                                values.map((e) => e['id'] as int).toList();
-                          });
-                          _removeSelectedUnits();
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'No units were added to the dashboard')),
-                          );
-                        }
-                      },
-                    ),
+                      child: Text(showAddRemoveButtons ? "Cancel" : "+/- Units",
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700)),
+                    )
                   ],
                 ),
-              ),
+              if (showAddRemoveButtons)
+                Visibility(
+                  visible: showAddRemoveButtons,
+                  child: OverflowBar(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          MultiSelectBottomSheetField(
+                            initialChildSize: .50,
+                            maxChildSize: .70,
+                            title: const Text("Add Units",
+                                style: TextStyle(fontSize: 14)),
+                            buttonIcon: const Icon(Icons.add_circle_outlined),
+                            buttonText: const Text(""),
+                            selectedColor: Colors.blue.withOpacity(.1),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.4),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(40)),
+                              border: Border.all(
+                                color: darkBlue,
+                                width: 1,
+                              ),
+                            ),
+                            searchable: true,
+                            searchHint: "Search...",
+                            items: unitItems,
+                            listType: MultiSelectListType.CHIP,
+                            onConfirm: (values) {
+                              if (values.isNotEmpty) {
+                                setState(() {
+                                  selectedUnitIds = values
+                                      .map((e) => e['id'] as int)
+                                      .toList();
+                                });
+                                _addSelectedUnits();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'No units were added to the dashboard')),
+                                );
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          MultiSelectDialogField(
+                            title: const Text("Remove Units",
+                                style: TextStyle(fontSize: 14)),
+                            buttonIcon: const Icon(Icons.remove_circle),
+                            buttonText: const Text(""),
+                            selectedColor:
+                                const Color.fromARGB(255, 243, 33, 33)
+                                    .withOpacity(.8),
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 243, 33, 33)
+                                  .withOpacity(0.4),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(40)),
+                              border: Border.all(
+                                color: darkBlue,
+                                width: 1,
+                              ),
+                            ),
+                            searchable: true,
+                            searchHint: "Search...",
+                            items: dashboardUnits,
+                            listType: MultiSelectListType.LIST,
+                            onConfirm: (values) {
+                              if (values.isNotEmpty) {
+                                setState(() {
+                                  selectedUnitIds = values
+                                      .map((e) => e['id'] as int)
+                                      .toList();
+                                });
+                                _removeSelectedUnits();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'No units were added to the dashboard')),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],              
+                  ),
+                ),
               UnitList(
                 units: units,
                 isLoading: isLoading,
