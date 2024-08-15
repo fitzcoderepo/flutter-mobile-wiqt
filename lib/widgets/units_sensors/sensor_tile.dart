@@ -40,27 +40,38 @@ class SensorTile extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           child: Column(
               children: [
-                Text(
-                  sensorName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: darkBlue,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child:Text(
+                    sensorName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: darkBlue,
+                    ),
                   ),
                 ),
-                Text(formatValue, style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.blue[800],
-                )),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child:
+                    Text(formatValue, style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.blue[800],
+                    )),
+                ),
                 const SizedBox(height: 5),
-                Text(
-                  reportDate,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[800],
-                  ),
-                  textAlign: TextAlign.center
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child:
+                    Text(
+                      reportDate,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[800],
+                      ),
+                      textAlign: TextAlign.center
+                    ),
                 ),
               ],
             ),
