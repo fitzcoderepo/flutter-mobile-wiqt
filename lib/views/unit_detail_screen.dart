@@ -16,12 +16,13 @@ class UnitDetailScreen extends StatefulWidget {
   final double lat;
   final double long;
 
-  const UnitDetailScreen(
-      {super.key,
-      required this.unitId,
-      required this.title,
-      required this.lat,
-      required this.long});
+  const UnitDetailScreen({
+    super.key,
+    required this.unitId,
+    required this.title,
+    required this.lat,
+    required this.long,
+  });
 
   @override
   _UnitDetailScreenState createState() => _UnitDetailScreenState();
@@ -70,10 +71,15 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     dynamic dateReported = unitDetails['last_reported'];
 
     // check dateReported is not null before parsing
-    String lastReported = dateReported != null ? DateFormat.yMd().add_jm().format(DateTime.parse(dateReported).toLocal()) : '--'; // value if dateReported is null
+    String lastReported = dateReported != null
+        ? DateFormat.yMd()
+            .add_jm()
+            .format(DateTime.parse(dateReported).toLocal())
+        : '--'; // value if dateReported is null
 
     double? lat = double.tryParse(unitDetails['lat']?.toString() ?? '');
     double? long = double.tryParse(unitDetails['long']?.toString() ?? '');
+
     // weather api vars
     final locationProvider = Provider.of<LocationProvider>(context);
     final weather = locationProvider.currentWeather;
@@ -81,34 +87,37 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
     String? weatherTemp = weather?.temperature?.fahrenheit?.toStringAsFixed(1);
     String? weatherIcon = weather?.weatherIcon;
     String getWeatherIconUrl(String? iconCode) {
-      return iconCode != null ? 'https://openweathermap.org/img/wn/$iconCode@2x.png' : ''; // empty string if iconCode is null
+      if (iconCode != null && iconCode.isNotEmpty) {
+        return 'https://openweathermap.org/img/wn/$iconCode@2x.png';
+      } else {
+        return '';
+      }
     }
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: darkBlue,
-        title: Column(
-          mainAxisSize:
-              MainAxisSize.min, // Makes column fit its children's size
-          children: <Widget>[
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: darkBlue),
-                color: Colors.white,
-                shape: BoxShape.circle,
+          backgroundColor: darkBlue,
+          title: Column(
+            mainAxisSize:
+                MainAxisSize.min, // Makes column fit its children's size
+            children: <Widget>[
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: darkBlue),
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: SvgPicture.asset(
+                  'assets/images/CircleLogo.svg',
+                  height: 45,
+                ),
               ),
-              child: SvgPicture.asset(
-                'assets/images/CircleLogo.svg',
-                height: 45,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(
+            ],
+          ),
+          centerTitle: true,
+          iconTheme: const IconThemeData(
             color: Colors.white,
-          )
-      ),
+          )),
       body: RefreshIndicator(
         onRefresh: _fetchUnitDetails,
         child: isLoading
@@ -132,18 +141,18 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
                               ),
                             ),
                             const SizedBox(height: 5),
-                            Text(weatherArea!),
+                            Text(weatherArea ?? ''),
                             Container(
                               decoration: const BoxDecoration(
                                 color: lightBlue,
                                 shape: BoxShape.circle,
                               ),
                               child: Image.network(
-                                  getWeatherIconUrl(weatherIcon!),
+                                  getWeatherIconUrl(weatherIcon),
                                   width: 50,
                                   height: 50),
                             ),
-                            Text('${weatherTemp!} °F'),
+                            Text('$weatherTemp °F'),
                           ],
                         ),
                       ),
@@ -158,18 +167,25 @@ class _UnitDetailScreenState extends State<UnitDetailScreen> {
                         children: selectedKeys
                             .where((key) => unitDetails.containsKey(key))
                             .map((key) => UnitDetailsCard(
-                                detailsKey: key, value: unitDetails[key]))
+                                  detailsKey: key,
+                                  value: unitDetails[key],
+                                  latestReport: latestReport,
+                                ))
                             .toList(),
                       ),
 
-                      const SizedBox(height: 10),
-
+                      const SizedBox(height: 5),
+                      const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('Chart Data',
+                              style: TextStyle(color: darkBlue, fontSize: 22))),
                       // Display sensor data tiles
                       SensorTilesList(
                         unitId: widget.unitId,
                         reportDate: lastReported,
                         latestReport: latestReport,
                         telemetryType: telemetryType,
+                        unitDetails: unitDetails,
                       )
                     ],
                   ),

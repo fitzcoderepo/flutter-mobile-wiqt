@@ -87,18 +87,16 @@ class UnitApi {
       Uri.parse('$baseUrl/api/v1/get-unit-details/$unitId'),
       headers: {'Authorization': 'Token $token'},
     );
-
+    
     final unitReportResponse = await http.get(
       Uri.parse('$baseUrl/api/v1/get-unit-reports/$unitId'),
       headers: {'Authorization': 'Token $token'},
     );
-
     if (unitDetailResponse.statusCode == 200 &&
         unitReportResponse.statusCode == 200) {
       final unitDetails = json.decode(unitDetailResponse.body);
       final unitReportData = json.decode(unitReportResponse.body);
       Map<String, dynamic> latestReport = {};
-
       if (unitReportData['results'] is List &&
           unitReportData['results'].isNotEmpty) {
         latestReport = unitReportData['results'].last;

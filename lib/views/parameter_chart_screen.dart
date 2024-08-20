@@ -4,8 +4,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:wateriqcloud_mobile/core/theme/app_pallete.dart';
 import 'package:wateriqcloud_mobile/services/storage/storage_manager.dart';
+import 'package:wateriqcloud_mobile/widgets/data_charts/sensor_description_provider.dart';
 import '../services/wiqc_api_services/api_services.dart';
 import 'dart:math';
+
 
 const Color lightBlue = Color(0xFFD3E8F8);
 const Color darkBlue = Color(0xFF17366D);
@@ -13,9 +15,14 @@ const Color darkBlue = Color(0xFF17366D);
 class ParameterChartScreen extends StatefulWidget {
   final int unitId;
   final String parameterName;
+  final String sensorDisplayName;
 
-  const ParameterChartScreen(
-      {super.key, required this.unitId, required this.parameterName});
+  const ParameterChartScreen({
+    super.key, 
+    required this.unitId, 
+    required this.parameterName,
+    required this.sensorDisplayName,
+  });
 
   @override
   _ParameterChartScreenState createState() => _ParameterChartScreenState();
@@ -74,28 +81,27 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppPallete.darkBlue,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: darkBlue),
-                color: Colors.white,
-                shape: BoxShape.circle,
+          backgroundColor: AppPallete.darkBlue,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: darkBlue),
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: SvgPicture.asset(
+                  'assets/images/CircleLogo.svg',
+                  height: 45,
+                ),
               ),
-              child: SvgPicture.asset(
-                'assets/images/CircleLogo.svg',
-                height: 45,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(
+            ],
+          ),
+          centerTitle: true,
+          iconTheme: const IconThemeData(
             color: Colors.white,
-          )
-      ),
+          )),
       body: RefreshIndicator(
         onRefresh: _fetchChartData,
         child: _buildBody(context),
@@ -126,7 +132,7 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
         child: Column(
           children: <Widget>[
             Text(
-              widget.parameterName.toUpperCase(),
+              widget.sensorDisplayName.toUpperCase(),
               style: const TextStyle(
                 color: darkBlue,
                 fontSize: 20,
@@ -135,11 +141,14 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
             ),
             const SizedBox(height: 5),
             _buildLineChart(context),
+            const SizedBox(height: 15),
+            _buildSensorDescription(),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildLineChart(BuildContext context) {
     return SizedBox(
@@ -152,8 +161,6 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
   }
 
   LineChartData _lineChartData() {
-    
-
     double minX = chartData.isNotEmpty ? chartData.first.x : 0;
     double maxX = chartData.isNotEmpty ? chartData.last.x : 0;
 
@@ -175,7 +182,6 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
       maxX: maxX,
       minY: minY,
       maxY: maxY,
-
       lineBarsData: [
         LineChartBarData(
           spots: chartData,
@@ -208,7 +214,8 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
         handleBuiltInTouches: true,
       ),
       titlesData: FlTitlesData(
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles:
+            const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
@@ -225,7 +232,11 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
                 final String text = DateFormat('MM/dd').format(time);
                 return SideTitleWidget(
                   axisSide: meta.axisSide,
-                  fitInside: const SideTitleFitInsideData(enabled: true, distanceFromEdge: -13, axisPosition: 0, parentAxisSize: 0),
+                  fitInside: const SideTitleFitInsideData(
+                      enabled: true,
+                      distanceFromEdge: -13,
+                      axisPosition: 0,
+                      parentAxisSize: 0),
                   space: 2,
                   child: Text(text,
                       style: const TextStyle(
@@ -244,20 +255,34 @@ class _ParameterChartScreenState extends State<ParameterChartScreen> {
             showTitles: true,
             getTitlesWidget: (value, meta) {
               return SideTitleWidget(
-                  axisSide: meta.axisSide,
-                  space: 1.0,
-                  angle: -0.3,
-                  child: Text(value.toStringAsFixed(1),
-                      style: const TextStyle(
-                          color: darkBlue,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 8,
-                      ),
-                    ),
-                );
+                axisSide: meta.axisSide,
+                space: 1.0,
+                angle: -0.3,
+                child: Text(
+                  value.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: darkBlue,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 8,
+                  ),
+                ),
+              );
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSensorDescription() {
+    String description =
+        SensorDescriptionProvider.getDescription(widget.parameterName);
+
+    return Text(
+      "Description:\n$description",
+      style: const TextStyle(
+        fontSize: 14,
+        color: Colors.black87,
       ),
     );
   }

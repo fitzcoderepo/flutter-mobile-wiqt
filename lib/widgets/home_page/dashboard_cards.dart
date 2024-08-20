@@ -25,7 +25,7 @@ class DashboardCards extends StatelessWidget {
       verticalOffset: 60.5,
       message: tooltipMessage,
       child: Card(
-        elevation: 4,
+        elevation: 0,
         child: InkWell(
           splashColor: Colors.blue,
           onTap: () {},

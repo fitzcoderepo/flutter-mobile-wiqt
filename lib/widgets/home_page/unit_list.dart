@@ -45,7 +45,7 @@ class _UnitListState extends State<UnitList> {
         }
 
         return Card(
-          elevation: 6,
+          elevation: 8,
           margin: const EdgeInsets.all(7),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
