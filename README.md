@@ -1,24 +1,49 @@
-<<<<<<< HEAD
-# wateriqcloud_mobile
+# WaterIQ Cloud Mobile
 
-# March 15, 2024
-https://console.firebase.google.com/u/1/project/wateriq-cloud/overview
+Flutter mobile app for WaterIQ Cloud. It provides a customer dashboard for units/sensors, charts, maps, and notifications backed by the WaterIQ Cloud API and Firebase messaging.
 
-# November 2023
-~A new Flutter project.~
+## What is in this repo
 
-~## Getting Started~
+- Flutter app source in `lib/`
+- Platform scaffolding in `android/`, `ios/`, `web/`, `macos/`, `linux/`, `windows/`
+- Assets in `assets/`
+- Firebase config in `firebase.json` and `lib/services/firebase/firebase_options.dart`
 
-~This project is a starting point for a Flutter application.~
+## Screenshot
 
-~A few resources to get you started if this is your first Flutter project:~
+![Login screen](docs/login.png)
 
-~- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)~
-~- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)~
+## Requirements
 
-~For help getting started with Flutter development, view the~
-~[online documentation](https://docs.flutter.dev/), which offers tutorials,~
-~samples, guidance on mobile development, and a full API reference.~
-~=======~
-# wateriqcloud-mobile
->>>>>>> bfb4e043bdaf0df3cc64ef9f3b0a30cbcc793fe7
+- Flutter SDK (3.2+ recommended)
+- Dart SDK (bundled with Flutter)
+- Android Studio/Xcode for device or simulator builds
+
+## Setup
+
+1) Install dependencies:
+
+```bash
+flutter pub get
+```
+
+2) Configure Firebase (if you need to regenerate options):
+
+```bash
+flutterfire configure
+```
+
+3) Run the app:
+
+```bash
+flutter run
+```
+
+## Notes
+
+- API base URL is defined in `lib/services/wiqc_api_services/api_url.dart`.
+- Firebase Cloud Messaging setup lives in `lib/services/firebase/`.
+
+## License
+
+Internal use only. Add a license if you plan to distribute the code.
